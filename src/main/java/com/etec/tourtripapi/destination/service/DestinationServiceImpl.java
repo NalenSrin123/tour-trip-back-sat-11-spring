@@ -2,6 +2,7 @@ package com.etec.tourtripapi.destination.service;
 
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.common.service.FileStorageService;
 import com.etec.tourtripapi.destination.dto.request.DestinationRequest;
 import com.etec.tourtripapi.destination.dto.response.DestinationResponse;
 import com.etec.tourtripapi.destination.entity.Destination;
@@ -19,6 +20,7 @@ public class DestinationServiceImpl implements DestinationService {
 
     private final DestinationRepository destinationRepository;
     private final DestinationMapper destinationMapper;
+    private final FileStorageService fileStorageService;
 
     @Override
     public DestinationResponse createDestination(DestinationRequest request) {
@@ -26,11 +28,17 @@ public class DestinationServiceImpl implements DestinationService {
             throw new ConflictException("Destination with name '" + request.getName() + "' already exists!");
         }
 
+        // Store image file if provided via laptop form dialog
+        String imageUrl = null;
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            imageUrl = fileStorageService.storeFile(request.getImageFile());
+        }
+
         Destination destination = new Destination();
         destination.setName(request.getName());
         destination.setCountry(request.getCountry());
         destination.setDescription(request.getDescription());
-        destination.setImageUrl(request.getImageUrl());
+        destination.setImageUrl(imageUrl); // Saves the file path link handled by FileController
 
         return destinationMapper.toResponse(destinationRepository.save(destination));
     }
@@ -43,7 +51,12 @@ public class DestinationServiceImpl implements DestinationService {
         if (request.getName() != null) destination.setName(request.getName());
         if (request.getCountry() != null) destination.setCountry(request.getCountry());
         if (request.getDescription() != null) destination.setDescription(request.getDescription());
-        if (request.getImageUrl() != null) destination.setImageUrl(request.getImageUrl());
+
+        // Update image file if a new file is uploaded
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            String imageUrl = fileStorageService.storeFile(request.getImageFile());
+            destination.setImageUrl(imageUrl);
+        }
 
         return destinationMapper.toResponse(destinationRepository.save(destination));
     }

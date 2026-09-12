@@ -5,6 +5,7 @@ import com.etec.tourtripapi.destination.dto.response.DestinationResponse;
 import com.etec.tourtripapi.destination.service.DestinationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,14 +28,14 @@ public class DestinationController {
         return ResponseEntity.ok(destinationService.getDestinationById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<DestinationResponse> createDestination(@RequestBody DestinationRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DestinationResponse> createDestination(@ModelAttribute DestinationRequest request) {
         DestinationResponse created = destinationService.createDestination(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<DestinationResponse> updateDestination(@PathVariable Long id, @RequestBody DestinationRequest request) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DestinationResponse> updateDestination(@PathVariable Long id, @ModelAttribute DestinationRequest request) {
         DestinationResponse updated = destinationService.updateDestination(id, request);
         return ResponseEntity.ok(updated);
     }

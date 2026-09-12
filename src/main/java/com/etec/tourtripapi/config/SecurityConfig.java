@@ -54,26 +54,43 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // 2. Public Read Access for Categories & Destinations (GET requests are open to everyone)
+                        // 2. Public Read Access for Categories, Destinations, Tours, Files, and Schedules
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/destinations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tours/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/files/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/schedules/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tours/*/schedules/**").permitAll() // Public tour schedules read
 
-                        // 3. Admin-Only Management (POST, PUT, DELETE for Categories, Destinations, Users, Roles)
+                        // 3. Admin-Only Management for Categories
                         .requestMatchers(HttpMethod.POST, "/api/v1/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/categories/**").hasRole("ADMIN")
 
-                        // 4.
+                        // 4. Admin-Only Management for Destinations
                         .requestMatchers(HttpMethod.POST, "/api/v1/destinations/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/destinations/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/destinations/**").hasRole("ADMIN")
 
+                        // 5. Admin-Only Management for Tours
+                        .requestMatchers(HttpMethod.POST, "/api/v1/tours/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/tours/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/tours/**").hasRole("ADMIN")
 
+                        // 6. Admin-Only Management for Tour Schedules (POST, PUT, DELETE)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/tours/*/schedules/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/schedules/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/schedules/**").hasRole("ADMIN")
+
+                        // 7. Bookings (Authenticated users can create, view their own, and cancel bookings. Admin can view all and update status)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bookings").hasRole("ADMIN") // Only admin can list all system bookings
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/bookings/*/status").hasRole("ADMIN") // Only admin can update status
+                        .requestMatchers("/api/v1/bookings/**").authenticated() // Any other booking endpoint requires login
+
+                        // 8. Users & Roles Management
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/roles/**").hasRole("ADMIN")
 
-                        // 4. Any other request requires authentication
                         .anyRequest().authenticated()
                 );
 
