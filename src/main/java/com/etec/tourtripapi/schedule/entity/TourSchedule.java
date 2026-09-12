@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.schedule.entity;
 
+import com.etec.tourtripapi.common.enums.ScheduleStatus;
 import com.etec.tourtripapi.tour.entity.Tour;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,6 +33,14 @@ public class TourSchedule {
     @Column(nullable = false)
     private Integer availableSlots;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private ScheduleStatus status;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.status == null) {
+            this.status = ScheduleStatus.ACTIVE;
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.schedule.dto.response;
 
+import com.etec.tourtripapi.common.enums.ScheduleStatus;
 import lombok.Data;
 import java.time.LocalDate;
 
@@ -11,5 +12,5 @@ public class TourScheduleResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer availableSlots;
-    private String status;
+    private ScheduleStatus status; // Changed from String to ScheduleStatus enum
 }

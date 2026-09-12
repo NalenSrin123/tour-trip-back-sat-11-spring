@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.schedule.service;
 
+import com.etec.tourtripapi.common.enums.ScheduleStatus;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
 import com.etec.tourtripapi.schedule.dto.request.TourScheduleRequest;
 import com.etec.tourtripapi.schedule.dto.response.TourScheduleResponse;
@@ -33,10 +34,8 @@ public class TourScheduleServiceImpl implements TourScheduleService {
         schedule.setEndDate(request.getEndDate());
         schedule.setAvailableSlots(request.getAvailableSlots());
 
-        // ✅ Set status from request, or default to "ACTIVE" if null/empty
-        schedule.setStatus(request.getStatus() != null && !request.getStatus().isEmpty()
-                ? request.getStatus()
-                : "ACTIVE");
+        // Default to ACTIVE if status is not provided in request
+        schedule.setStatus(request.getStatus() != null ? request.getStatus() : ScheduleStatus.ACTIVE);
 
         return scheduleMapper.toResponse(scheduleRepository.save(schedule));
     }
@@ -66,7 +65,7 @@ public class TourScheduleServiceImpl implements TourScheduleService {
         if (request.getStartDate() != null) schedule.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) schedule.setEndDate(request.getEndDate());
         if (request.getAvailableSlots() != null) schedule.setAvailableSlots(request.getAvailableSlots());
-        if (request.getStatus() != null) schedule.setStatus(request.getStatus()); // ✅ Update status if provided
+        if (request.getStatus() != null) schedule.setStatus(request.getStatus());
 
         return scheduleMapper.toResponse(scheduleRepository.save(schedule));
     }

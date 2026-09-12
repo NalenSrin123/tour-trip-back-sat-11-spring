@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.booking.dto.response;
 
+import com.etec.tourtripapi.common.enums.BookingStatus;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,6 +18,6 @@ public class BookingResponse {
     private LocalDate endDate;
     private Integer numberOfParticipants;
     private BigDecimal totalPrice;
-    private String status;
+    private BookingStatus status; // Changed from String to BookingStatus enum
     private LocalDateTime bookingDate;
 }

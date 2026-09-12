@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.booking.entity;
 
+import com.etec.tourtripapi.common.enums.BookingStatus;
 import com.etec.tourtripapi.schedule.entity.TourSchedule;
 import com.etec.tourtripapi.user.entity.User;
 import jakarta.persistence.*;
@@ -35,8 +36,9 @@ public class Booking {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; // e.g., PENDING, CONFIRMED, CANCELLED
+    private BookingStatus status;
 
     @Column(nullable = false)
     private LocalDateTime bookingDate;
@@ -45,7 +47,7 @@ public class Booking {
     public void prePersist() {
         this.bookingDate = LocalDateTime.now();
         if (this.status == null) {
-            this.status = "PENDING";
+            this.status = BookingStatus.PENDING;
         }
     }
 }

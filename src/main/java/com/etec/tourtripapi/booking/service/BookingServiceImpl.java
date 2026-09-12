@@ -5,6 +5,7 @@ import com.etec.tourtripapi.booking.dto.response.BookingResponse;
 import com.etec.tourtripapi.booking.entity.Booking;
 import com.etec.tourtripapi.booking.mapper.BookingMapper;
 import com.etec.tourtripapi.booking.repository.BookingRepository;
+import com.etec.tourtripapi.common.enums.BookingStatus;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
 import com.etec.tourtripapi.schedule.entity.TourSchedule;
@@ -55,7 +56,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setSchedule(schedule);
         booking.setNumberOfParticipants(request.getNumberOfParticipants());
         booking.setTotalPrice(totalPrice);
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(BookingStatus.CONFIRMED);
 
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
@@ -84,9 +85,18 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse updateBookingStatus(Long id, String status) {
+    @Transactional
+    public BookingResponse updateBookingStatus(Long id, String statusStr) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
+
+        BookingStatus status;
+        try {
+            status = BookingStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ConflictException("Invalid booking status: " + statusStr);
+        }
+
         booking.setStatus(status);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
@@ -102,7 +112,7 @@ public class BookingServiceImpl implements BookingService {
         schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfParticipants());
         scheduleRepository.save(schedule);
 
-        booking.setStatus("CANCELLED");
+        booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
     }
 }

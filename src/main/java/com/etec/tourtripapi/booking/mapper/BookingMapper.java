@@ -27,7 +27,7 @@ public class BookingMapper {
 
         response.setNumberOfParticipants(booking.getNumberOfParticipants());
         response.setTotalPrice(booking.getTotalPrice());
-        response.setStatus(booking.getStatus());
+        response.setStatus(booking.getStatus()); // Directly assigns BookingStatus enum
         response.setBookingDate(booking.getBookingDate());
 
         return response;
