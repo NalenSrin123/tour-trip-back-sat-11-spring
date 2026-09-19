@@ -6,7 +6,6 @@ import com.etec.tourtripapi.auth.dto.response.JwtResponse;
 import com.etec.tourtripapi.auth.dto.request.LoginRequest;
 import com.etec.tourtripapi.common.exception.BadRequestException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
-import com.etec.tourtripapi.role.entity.Role;
 import com.etec.tourtripapi.role.service.RoleServiceImpl;
 import com.etec.tourtripapi.security.jwt.JwtUtils;
 import com.etec.tourtripapi.user.dto.request.SignupRequest;
@@ -15,6 +14,7 @@ import com.etec.tourtripapi.user.repository.UserRepository;
 import com.etec.tourtripapi.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
+
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +25,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -38,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final UserService userService;
     private final UserRepository userRepository;
-//    private final JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
     private final RoleServiceImpl roleServiceImpl;
 
@@ -67,55 +66,18 @@ public class AuthServiceImpl implements AuthService {
         return new JwtResponse(jwt, user.getId(), user.getEmail(), user.getFullName(), roles);
     }
 
-//    @Override
-//    public User registerUser(RegisterRequest registerRequest) {
-//        // Map RegisterRequest to SignupRequest
-//        SignupRequest signupRequest = new SignupRequest();
-//        signupRequest.setFullName(registerRequest.getFullName());
-//        signupRequest.setEmail(registerRequest.getEmail());
-//        signupRequest.setPassword(registerRequest.getPassword());
-//        signupRequest.setPhoneNumber(registerRequest.getPhoneNumber());
-//
-//        // Create user using existing service logic
-//        User user = userService.createUser(signupRequest);
-//        user.setActive(false); // Inactive until OTP verification is completed
-//
-//        // Generate 6-digit OTP
-//        String otp = String.format("%06d", new Random().nextInt(999999));
-//        user.setResetOtp(otp);
-//        user.setOtpExpiryDate(LocalDateTime.now().plusMinutes(10));
-//        userRepository.save(user);
-//
-//        // Send OTP email
-//        SimpleMailMessage message = new SimpleMailMessage();
-//        message.setTo(user.getEmail());
-//        message.setSubject("Account Verification OTP");
-//        message.setText("Your account verification code is: " + otp + ". It expires in 10 minutes.");
-//        mailSender.send(message);
-//
-//        return user;
-//    }
-
     @Override
     public User registerUser(RegisterRequest registerRequest) {
+        // Map RegisterRequest to SignupRequest
         SignupRequest signupRequest = new SignupRequest();
         signupRequest.setFullName(registerRequest.getFullName());
         signupRequest.setEmail(registerRequest.getEmail());
         signupRequest.setPassword(registerRequest.getPassword());
         signupRequest.setPhoneNumber(registerRequest.getPhoneNumber());
 
-        // This creates the user
+        // Create user using existing service logic
         User user = userService.createUser(signupRequest);
-
-        // 🛑 CRITICAL: Force active to false so they must verify via OTP!
-        user.setActive(false);
-
-        // 🟢 SAFE ROLE FETCHING WITH NULL CHECK
-        Role customerRole = roleServiceImpl.findByName("CUSTOMER");
-        if (customerRole == null) {
-            throw new BadRequestException("Default 'CUSTOMER' role is missing from the database. Please insert it into the roles table.");
-        }
-        user.setRoles(Collections.singleton(customerRole));
+        user.setActive(false); // Inactive until OTP verification is completed
 
         // Generate 6-digit OTP
         String otp = String.format("%06d", new Random().nextInt(999999));
@@ -123,9 +85,12 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiryDate(LocalDateTime.now().plusMinutes(10));
         userRepository.save(user);
 
-        System.out.println("\n==================================================");
-        System.out.println("📬 [MOCK EMAIL] REGISTRATION OTP FOR " + user.getEmail() + ": " + otp);
-        System.out.println("==================================================\n");
+        // Send OTP email
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("Account Verification OTP");
+        message.setText("Your account verification code is: " + otp + ". It expires in 10 minutes.");
+        mailSender.send(message);
 
         return user;
     }
