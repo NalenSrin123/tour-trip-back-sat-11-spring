@@ -26,6 +26,12 @@ public class AuthController {
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
+    @PostMapping("/resend-registration-otp")
+    public ResponseEntity<String> resendRegistrationOtp(@RequestBody VerifyOtpRequest request) {
+        authService.resendRegistrationOtp(request.getEmail());
+        return ResponseEntity.ok("A new verification OTP has been sent to your email.");
+    }
+
     @PostMapping("/verify-registration")
     public ResponseEntity<String> verifyRegistration(@RequestBody VerifyOtpRequest request) {
         authService.verifyRegistrationOtp(request.getEmail(), request.getOtp());

@@ -1,0 +1,24 @@
+Phnom Penh|/api/v1/files/seed-phnom-penh-1.jpg|/api/v1/files/seed-phnom-penh-2.jpg|/api/v1/files/seed-phnom-penh-3.jpg|/api/v1/files/seed-phnom-penh-4.jpg
+Sihanoukville|/api/v1/files/seed-sihanoukville-1.jpg|/api/v1/files/seed-sihanoukville-2.jpg|/api/v1/files/seed-sihanoukville-3.jpg
+Koh Rong|/api/v1/files/seed-koh-rong-1.jpg|/api/v1/files/seed-koh-rong-2.jpg|/api/v1/files/seed-koh-rong-3.jpg|/api/v1/files/seed-koh-rong-4.jpg
+Koh Rong Sanloem|/api/v1/files/seed-koh-rong-sanloem-1.jpg|/api/v1/files/seed-koh-rong-sanloem-2.jpg|/api/v1/files/seed-koh-rong-sanloem-3.jpg
+Battambang|/api/v1/files/seed-battambang-1.jpg|/api/v1/files/seed-battambang-2.jpg|/api/v1/files/seed-battambang-3.jpg|/api/v1/files/seed-battambang-4.jpg
+Kep|/api/v1/files/seed-kep-1.jpg|/api/v1/files/seed-kep-2.jpg|/api/v1/files/seed-kep-3.jpg
+Kratie|/api/v1/files/seed-kratie-1.jpg|/api/v1/files/seed-kratie-2.jpg
+Sen Monorom|/api/v1/files/seed-sen-monorom-1.jpg|/api/v1/files/seed-sen-monorom-2.jpg|/api/v1/files/seed-sen-monorom-3.jpg
+Banlung|/api/v1/files/seed-banlung-1.jpg|/api/v1/files/seed-banlung-2.jpg|/api/v1/files/seed-banlung-3.jpg
+Preah Vihear Temple|/api/v1/files/seed-preah-vihear-temple-1.jpg|/api/v1/files/seed-preah-vihear-temple-2.jpg|/api/v1/files/seed-preah-vihear-temple-3.jpg
+Koh Ker|/api/v1/files/seed-koh-ker-1.jpg|/api/v1/files/seed-koh-ker-2.jpg|/api/v1/files/seed-koh-ker-3.jpg
+Banteay Srei|/api/v1/files/seed-banteay-srei-1.jpg|/api/v1/files/seed-banteay-srei-2.jpg|/api/v1/files/seed-banteay-srei-3.jpg
+Tonle Sap Lake|/api/v1/files/seed-tonle-sap-lake-1.jpg|/api/v1/files/seed-tonle-sap-lake-2.jpg|/api/v1/files/seed-tonle-sap-lake-3.jpg|/api/v1/files/seed-tonle-sap-lake-4.jpg
+Kampong Cham|/api/v1/files/seed-kampong-cham-1.jpg|/api/v1/files/seed-kampong-cham-2.jpg|/api/v1/files/seed-kampong-cham-3.jpg
+Kampong Thom|/api/v1/files/seed-kampong-thom-1.jpg|/api/v1/files/seed-kampong-thom-2.jpg|/api/v1/files/seed-kampong-thom-3.jpg
+Kirirom National Park|/api/v1/files/seed-kirirom-national-park-1.jpg|/api/v1/files/seed-kirirom-national-park-2.jpg|/api/v1/files/seed-kirirom-national-park-3.jpg
+Bokor Mountain|/api/v1/files/seed-bokor-mountain-1.jpg|/api/v1/files/seed-bokor-mountain-2.jpg|/api/v1/files/seed-bokor-mountain-3.jpg
+Otres Beach|/api/v1/files/seed-otres-beach-1.jpg|/api/v1/files/seed-otres-beach-2.jpg|/api/v1/files/seed-otres-beach-3.jpg
+Angkor Thom|/api/v1/files/seed-angkor-thom-1.jpg|/api/v1/files/seed-angkor-thom-2.jpg|/api/v1/files/seed-angkor-thom-3.jpg|/api/v1/files/seed-angkor-thom-4.jpg
+Ta Prohm|/api/v1/files/seed-ta-prohm-1.jpg|/api/v1/files/seed-ta-prohm-2.jpg|/api/v1/files/seed-ta-prohm-3.jpg
+Cardamom Mountains|/api/v1/files/seed-cardamom-mountains-1.jpg|/api/v1/files/seed-cardamom-mountains-2.png|/api/v1/files/seed-cardamom-mountains-3.png
+Koh Kong|/api/v1/files/seed-koh-kong-1.png|/api/v1/files/seed-koh-kong-2.png
+Siem Reap|/api/v1/files/seed-siem-reap-1.jpg|/api/v1/files/seed-siem-reap-2.jpg|/api/v1/files/seed-siem-reap-3.jpg|/api/v1/files/seed-siem-reap-4.jpg|/api/v1/files/seed-siem-reap-5.jpg
+Kampot|/api/v1/files/seed-kampot-1.jpg|/api/v1/files/seed-kampot-2.jpg|/api/v1/files/seed-kampot-3.jpg|/api/v1/files/seed-kampot-4.jpg

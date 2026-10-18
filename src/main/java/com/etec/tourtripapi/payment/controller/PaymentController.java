@@ -33,6 +33,11 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<PaymentResponse> updatePaymentStatus(@PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(paymentService.updatePaymentStatus(id, status));
+    }
+
     @GetMapping("/booking/{bookingId}")
     public ResponseEntity<PaymentResponse> getPaymentByBookingId(@PathVariable Long bookingId) {
         return ResponseEntity.ok(paymentService.getPaymentByBookingId(bookingId));

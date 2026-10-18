@@ -9,8 +9,10 @@ import com.etec.tourtripapi.destination.entity.Destination;
 import com.etec.tourtripapi.destination.mapper.DestinationMapper;
 import com.etec.tourtripapi.destination.repository.DestinationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,15 +32,33 @@ public class DestinationServiceImpl implements DestinationService {
 
         // Store image file if provided via laptop form dialog
         String imageUrl = null;
-        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+        List<String> imageUrls = new ArrayList<>();
+
+        if (request.getImageFiles() != null && !request.getImageFiles().isEmpty()) {
+            for (var f : request.getImageFiles()) {
+                if (f != null && !f.isEmpty()) {
+                    String u = fileStorageService.storeFile(f);
+                    imageUrls.add(u);
+                }
+            }
+        }
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty() && imageUrls.isEmpty()) {
             imageUrl = fileStorageService.storeFile(request.getImageFile());
+            imageUrls.add(imageUrl);
+        }
+
+        if (imageUrls.isEmpty()) {
+            imageUrl = null;
+        } else {
+            imageUrl = imageUrls.get(0);
         }
 
         Destination destination = new Destination();
         destination.setName(request.getName());
         destination.setCountry(request.getCountry());
         destination.setDescription(request.getDescription());
-        destination.setImageUrl(imageUrl); // Saves the file path link handled by FileController
+        destination.setImageUrl(imageUrl);
+        destination.setImages(imageUrls);
 
         return destinationMapper.toResponse(destinationRepository.save(destination));
     }
@@ -52,10 +72,46 @@ public class DestinationServiceImpl implements DestinationService {
         if (request.getCountry() != null) destination.setCountry(request.getCountry());
         if (request.getDescription() != null) destination.setDescription(request.getDescription());
 
-        // Update image file if a new file is uploaded
+        List<String> imageUrls = new ArrayList<>(destination.getImages() != null ? destination.getImages() : List.of());
+        boolean imagesChanged = false;
+        List<String> newlyUploaded = new ArrayList<>();
+
+        // Remove images the client asked to delete
+        List<String> toDelete = request.getImagesToDelete() != null ? request.getImagesToDelete() : List.of();
+        if (!toDelete.isEmpty()) {
+            imageUrls.removeAll(toDelete);
+            imagesChanged = true;
+        }
+
+        // Append newly uploaded files
+        if (request.getImageFiles() != null && !request.getImageFiles().isEmpty()) {
+            for (var f : request.getImageFiles()) {
+                if (f != null && !f.isEmpty()) {
+                    String u = fileStorageService.storeFile(f);
+                    imageUrls.add(u);
+                    newlyUploaded.add(u);
+                    imagesChanged = true;
+                }
+            }
+        }
         if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
-            String imageUrl = fileStorageService.storeFile(request.getImageFile());
-            destination.setImageUrl(imageUrl);
+            String u = fileStorageService.storeFile(request.getImageFile());
+            imageUrls.add(u);
+            newlyUploaded.add(u);
+            imagesChanged = true;
+        }
+
+        if (imagesChanged) {
+            destination.setImages(imageUrls);
+            String cover = destination.getImageUrl();
+            if (!newlyUploaded.isEmpty()) {
+                // The most recently uploaded image becomes the cover so the edit is
+                // immediately visible in the admin table and on the storefront.
+                destination.setImageUrl(newlyUploaded.get(0));
+            } else if (cover == null || cover.isBlank() || !imageUrls.contains(cover)) {
+                // Reset the cover if it is missing or was removed from the gallery
+                destination.setImageUrl(imageUrls.isEmpty() ? null : imageUrls.get(0));
+            }
         }
 
         return destinationMapper.toResponse(destinationRepository.save(destination));
@@ -78,7 +134,7 @@ public class DestinationServiceImpl implements DestinationService {
 
     @Override
     public List<DestinationResponse> getAllDestinations() {
-        return destinationRepository.findAll().stream()
+        return destinationRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(destinationMapper::toResponse)
                 .collect(Collectors.toList());
     }

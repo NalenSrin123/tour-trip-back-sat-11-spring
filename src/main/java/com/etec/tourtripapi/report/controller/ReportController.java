@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayInputStream;
@@ -23,8 +24,11 @@ public class ReportController {
 
     @GetMapping("/bookings/excel")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Resource> downloadBookingsExcel() {
-        ByteArrayInputStream inputStream = reportService.exportBookingsExcel();
+    public ResponseEntity<Resource> downloadBookingsExcel(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        ByteArrayInputStream inputStream = reportService.exportBookingsExcel(status, from, to);
         InputStreamResource file = new InputStreamResource(inputStream);
 
         return ResponseEntity.ok()
@@ -35,12 +39,45 @@ public class ReportController {
 
     @GetMapping("/bookings/pdf")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Resource> downloadBookingsPdf() {
-        ByteArrayInputStream inputStream = reportService.exportBookingsPdf();
+    public ResponseEntity<Resource> downloadBookingsPdf(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        ByteArrayInputStream inputStream = reportService.exportBookingsPdf(status, from, to);
         InputStreamResource file = new InputStreamResource(inputStream);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=bookings-report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file);
+    }
+
+    @GetMapping("/payments/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Resource> downloadPaymentsExcel(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        ByteArrayInputStream inputStream = reportService.exportPaymentsExcel(status, from, to);
+        InputStreamResource file = new InputStreamResource(inputStream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=payments-report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @GetMapping("/payments/pdf")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Resource> downloadPaymentsPdf(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        ByteArrayInputStream inputStream = reportService.exportPaymentsPdf(status, from, to);
+        InputStreamResource file = new InputStreamResource(inputStream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=payments-report.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file);
     }

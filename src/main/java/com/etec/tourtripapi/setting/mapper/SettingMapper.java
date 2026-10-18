@@ -15,6 +15,8 @@ public class SettingMapper {
         response.setSettingKey(setting.getSettingKey());
         response.setSettingValue(setting.getSettingValue());
         response.setDescription(setting.getDescription());
+        response.setCreatedAt(setting.getCreatedAt());
+        response.setUpdatedAt(setting.getUpdatedAt());
 
         return response;
     }

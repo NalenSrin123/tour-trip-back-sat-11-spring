@@ -9,6 +9,7 @@ import com.etec.tourtripapi.user.entity.User;
 public interface AuthService {
     JwtResponse authenticateUser(LoginRequest loginRequest);
     User registerUser(RegisterRequest registerRequest);
+    void resendRegistrationOtp(String email);
     void verifyRegistrationOtp(String email, String otp);
     void forgotPassword(String email);
     boolean verifyOtp(String email, String otp);

@@ -10,6 +10,8 @@ public class ReviewResponse {
     private String tourTitle;
     private Long userId;
     private String userEmail;
+    private String userName;
+    private String userAvatarUrl;
     private Long bookingId;
     private Integer rating;
     private String comment;

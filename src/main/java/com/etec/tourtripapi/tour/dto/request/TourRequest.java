@@ -20,4 +20,6 @@ public class TourRequest {
     private String excludedItems;
     private Boolean isPublished;
     private List<MultipartFile> imageFiles;
+
+    private List<Long> imagesToDelete;
 }

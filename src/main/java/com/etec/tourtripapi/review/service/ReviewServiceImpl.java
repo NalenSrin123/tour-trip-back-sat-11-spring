@@ -69,6 +69,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public List<ReviewResponse> getAllReviews() {
+        return reviewRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(reviewMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ReviewResponse> getReviewsByTourId(Long tourId) {
         if (!tourRepository.existsById(tourId)) {
             throw new ResourceNotFoundException("Tour not found with id: " + tourId);

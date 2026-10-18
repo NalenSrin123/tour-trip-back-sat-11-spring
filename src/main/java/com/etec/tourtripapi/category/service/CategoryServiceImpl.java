@@ -8,6 +8,7 @@ import com.etec.tourtripapi.category.repository.CategoryRepository;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -63,7 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
+        return categoryRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }

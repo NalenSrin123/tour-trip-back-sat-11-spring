@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface ReviewService {
     ReviewResponse createReview(ReviewRequest request, String userEmail);
+    List<ReviewResponse> getAllReviews();
     List<ReviewResponse> getReviewsByTourId(Long tourId);
     void deleteReview(Long id);
 }

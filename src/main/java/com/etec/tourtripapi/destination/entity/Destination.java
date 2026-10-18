@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "destinations")
 @Data
@@ -25,6 +28,12 @@ public class Destination {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "destination_images", joinColumns = @JoinColumn(name = "destination_id"))
+    @OrderColumn(name = "sort_order")
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private List<String> images = new ArrayList<>();
 }

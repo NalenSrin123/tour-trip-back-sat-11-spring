@@ -1,11 +1,11 @@
-package com.etec.tourtripapi.auth.dto.request;
+    package com.etec.tourtripapi.auth.dto.request;
 
-import lombok.Data;
+    import lombok.Data;
 
-@Data
-public class RegisterRequest {
-    private String fullName;
-    private String email;
-    private String password;
-    private String phoneNumber;
-}
+    @Data
+    public class RegisterRequest {
+        private String fullName;
+        private String email;
+        private String password;
+        private String phoneNumber;
+    }

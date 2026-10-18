@@ -6,6 +6,7 @@ import com.etec.tourtripapi.role.dto.request.RoleRequest;
 import com.etec.tourtripapi.role.entity.Role;
 import com.etec.tourtripapi.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,6 +37,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = new Role();
         role.setName(request.getName());
+        role.setDescription(request.getDescription());
         return roleRepository.save(role);
     }
 
@@ -51,6 +53,7 @@ public class RoleServiceImpl implements RoleService {
         });
 
         existingRole.setName(request.getName());
+        existingRole.setDescription(request.getDescription());
         return roleRepository.save(existingRole);
     }
 
@@ -64,6 +67,6 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<Role> getAllRoles() {
-        return roleRepository.findAll();
+        return roleRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 }

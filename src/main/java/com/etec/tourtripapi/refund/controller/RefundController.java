@@ -6,6 +6,7 @@ import com.etec.tourtripapi.refund.service.RefundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,14 +19,19 @@ public class RefundController {
     private final RefundService refundService;
 
     @PostMapping
-    public ResponseEntity<RefundResponse> requestRefund(@RequestBody RefundRequest request) {
-        RefundResponse response = refundService.requestRefund(request);
+    public ResponseEntity<RefundResponse> requestRefund(@RequestBody RefundRequest request, Authentication authentication) {
+        RefundResponse response = refundService.requestRefund(request, authentication.getName());
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<RefundResponse>> getAllRefunds() {
         return ResponseEntity.ok(refundService.getAllRefunds());
+    }
+
+    @GetMapping("/my-refunds")
+    public ResponseEntity<List<RefundResponse>> getMyRefunds(Authentication authentication) {
+        return ResponseEntity.ok(refundService.getMyRefunds(authentication.getName()));
     }
 
     @GetMapping("/{id}")

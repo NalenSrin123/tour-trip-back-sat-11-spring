@@ -10,6 +10,7 @@ import com.etec.tourtripapi.schedule.repository.TourScheduleRepository;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.repository.TourRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,14 @@ public class TourScheduleServiceImpl implements TourScheduleService {
     private final TourScheduleRepository scheduleRepository;
     private final TourRepository tourRepository;
     private final TourScheduleMapper scheduleMapper;
+
+    @Override
+    public List<TourScheduleResponse> getAllSchedules() {
+        return scheduleRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
+                .map(scheduleMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public TourScheduleResponse createSchedule(Long tourId, TourScheduleRequest request) {
@@ -77,4 +86,6 @@ public class TourScheduleServiceImpl implements TourScheduleService {
         }
         scheduleRepository.deleteById(id);
     }
+
+
 }

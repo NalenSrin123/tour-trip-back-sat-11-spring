@@ -2,6 +2,7 @@ package com.etec.tourtripapi.user.controller;
 
 import com.etec.tourtripapi.user.dto.request.SignupRequest;
 import com.etec.tourtripapi.user.dto.request.UpdateRequest;
+import com.etec.tourtripapi.user.dto.request.UserRolesRequest;
 import com.etec.tourtripapi.user.dto.response.UserResponse;
 import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.mapper.UserMapper;
@@ -9,6 +10,7 @@ import com.etec.tourtripapi.user.repository.UserRepository;
 import com.etec.tourtripapi.user.service.UserService;
 import com.etec.tourtripapi.user.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +46,7 @@ public class UserController {
                 .and(UserSpecification.hasEmail(email))
                 .and(UserSpecification.isActive(active));
 
-        List<User> users = userRepository.findAll(spec);
+        List<User> users = userRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id"));
         List<UserResponse> responseList = users.stream()
                 .map(userMapper::toResponse)
                 .collect(Collectors.toList());
@@ -63,6 +65,13 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UpdateRequest request) {
         User updatedUser = userService.updateUser(id, request);
+        return ResponseEntity.ok(userMapper.toResponse(updatedUser));
+    }
+
+    // UPDATE: Replace user roles (user_roles)
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<UserResponse> updateUserRoles(@PathVariable Long id, @RequestBody UserRolesRequest request) {
+        User updatedUser = userService.updateRoles(id, request.getRoles());
         return ResponseEntity.ok(userMapper.toResponse(updatedUser));
     }
 

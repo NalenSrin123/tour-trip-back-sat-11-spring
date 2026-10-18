@@ -33,6 +33,19 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
+    /**
+     * Fan an event out to every administrator, since the bell is only rendered
+     * on the admin portal.
+     */
+    @Override
+    @Transactional
+    public void createForAdmins(String type, String message) {
+        userRepository.findAll().stream()
+                .filter(u -> u.getRoles() != null && u.getRoles().stream()
+                        .anyMatch(role -> "ADMIN".equalsIgnoreCase(role.getName())))
+                .forEach(admin -> createNotification(admin, type, message));
+    }
+
     @Override
     public List<NotificationResponse> getUserNotifications(String userEmail) {
         User user = userRepository.findByEmail(userEmail)

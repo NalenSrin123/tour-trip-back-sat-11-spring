@@ -13,6 +13,8 @@ import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
 import com.etec.tourtripapi.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 
 import org.springframework.mail.javamail.JavaMailSender;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -40,6 +43,9 @@ public class AuthServiceImpl implements AuthService {
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
     private final RoleServiceImpl roleServiceImpl;
+
+    @Value("${spring.mail.username:}")
+    private String mailFrom;
 
     @Override
     public JwtResponse authenticateUser(LoginRequest loginRequest) {
@@ -78,21 +84,52 @@ public class AuthServiceImpl implements AuthService {
         // Create user using existing service logic
         User user = userService.createUser(signupRequest);
         user.setActive(false); // Inactive until OTP verification is completed
+        userRepository.save(user);
 
-        // Generate 6-digit OTP
+        generateAndSendOtp(user, "Account Verification OTP", "Your account verification code is: ");
+
+        return user;
+    }
+
+    @Override
+    public void resendRegistrationOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        if (user.isActive()) {
+            throw new BadRequestException("This account is already verified. Please log in.");
+        }
+
+        generateAndSendOtp(user, "Account Verification OTP", "Your account verification code is: ");
+    }
+
+    /**
+     * Generates a fresh 6-digit OTP, stores it on the user with a 10-minute expiry,
+     * and attempts to email it. The OTP is always written to the application log so
+     * that local/dev environments can complete verification even if SMTP delivery
+     * is unavailable or the email lands in spam.
+     */
+    private void generateAndSendOtp(User user, String subject, String bodyPrefix) {
         String otp = String.format("%06d", new Random().nextInt(999999));
         user.setResetOtp(otp);
         user.setOtpExpiryDate(LocalDateTime.now().plusMinutes(10));
         userRepository.save(user);
 
-        // Send OTP email
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject("Account Verification OTP");
-        message.setText("Your account verification code is: " + otp + ". It expires in 10 minutes.");
-        mailSender.send(message);
+        log.info("OTP for {} [{}] is {} (expires in 10 minutes)", user.getEmail(), subject, otp);
 
-        return user;
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            if (mailFrom != null && !mailFrom.isBlank()) {
+                message.setFrom(mailFrom);
+            }
+            message.setTo(user.getEmail());
+            message.setSubject(subject);
+            message.setText(bodyPrefix + otp + ". It expires in 10 minutes.");
+            mailSender.send(message);
+            log.info("OTP email sent successfully to {}", user.getEmail());
+        } catch (Exception e) {
+            log.warn("Failed to send OTP email to {}: {}. Use the OTP logged above to verify.", user.getEmail(), e.getMessage());
+        }
     }
 
     @Override
@@ -120,16 +157,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        user.setResetOtp(otp);
-        user.setOtpExpiryDate(LocalDateTime.now().plusMinutes(10));
-        userRepository.save(user);
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Password Reset OTP");
-        message.setText("Your password reset code is: " + otp + ". It expires in 10 minutes.");
-//        mailSender.send(message);
+        generateAndSendOtp(user, "Password Reset OTP", "Your password reset code is: ");
     }
 
     @Override

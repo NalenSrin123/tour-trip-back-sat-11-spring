@@ -8,11 +8,13 @@ import com.etec.tourtripapi.booking.repository.BookingRepository;
 import com.etec.tourtripapi.common.enums.BookingStatus;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.notification.service.NotificationService;
 import com.etec.tourtripapi.schedule.entity.TourSchedule;
 import com.etec.tourtripapi.schedule.repository.TourScheduleRepository;
 import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class BookingServiceImpl implements BookingService {
     private final TourScheduleRepository scheduleRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -56,14 +59,24 @@ public class BookingServiceImpl implements BookingService {
         booking.setSchedule(schedule);
         booking.setNumberOfParticipants(request.getNumberOfParticipants());
         booking.setTotalPrice(totalPrice);
-        booking.setStatus(BookingStatus.CONFIRMED);
+        // A new booking is only reserved here; it becomes CONFIRMED once payment
+        // succeeds (or an admin marks a cash payment as received).
+        booking.setStatus(BookingStatus.PENDING);
 
-        return bookingMapper.toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        notificationService.createForAdmins("BOOKING_CREATED",
+                "New booking #" + saved.getId() + " by " + user.getEmail() + " — awaiting payment.");
+        notificationService.createNotification(user, "BOOKING_CREATED",
+                "Booking #" + saved.getId() + " created. Please complete payment to confirm.");
+
+        return bookingMapper.toResponse(saved);
     }
 
     @Override
     public List<BookingResponse> getAllBookings(Specification<Booking> spec) {
-        return bookingRepository.findAll(spec).stream()
+        // Newest bookings first
+        return bookingRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -97,8 +110,27 @@ public class BookingServiceImpl implements BookingService {
             throw new ConflictException("Invalid booking status: " + statusStr);
         }
 
+        BookingStatus previousStatus = booking.getStatus();
         booking.setStatus(status);
-        return bookingMapper.toResponse(bookingRepository.save(booking));
+
+        // Release the reserved slots exactly once when a booking moves into CANCELLED,
+        // matching what cancelBooking() and refund approval already do.
+        if (status == BookingStatus.CANCELLED && previousStatus != BookingStatus.CANCELLED) {
+            TourSchedule schedule = booking.getSchedule();
+            if (schedule != null && booking.getNumberOfParticipants() != null) {
+                schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfParticipants());
+                scheduleRepository.save(schedule);
+            }
+        }
+
+        Booking saved = bookingRepository.save(booking);
+
+        if (previousStatus != status && saved.getUser() != null) {
+            notificationService.createNotification(saved.getUser(), "BOOKING_" + status,
+                    "Your booking #" + saved.getId() + " is now " + status.name().toLowerCase() + ".");
+        }
+
+        return bookingMapper.toResponse(saved);
     }
 
     @Override
@@ -107,6 +139,11 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
 
+        // Guard against a double cancel releasing the same slots twice
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            return;
+        }
+
         // Restore slots back to the tour schedule
         TourSchedule schedule = booking.getSchedule();
         schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfParticipants());
@@ -114,5 +151,8 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+
+        notificationService.createForAdmins("BOOKING_CANCELLED",
+                "Booking #" + booking.getId() + " was cancelled by the customer.");
     }
 }

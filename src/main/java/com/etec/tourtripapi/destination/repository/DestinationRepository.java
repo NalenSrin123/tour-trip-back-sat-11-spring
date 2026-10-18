@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DestinationRepository extends JpaRepository<Destination, Long>, JpaSpecificationExecutor<Destination> {
     boolean existsByName(String name);
+    java.util.Optional<Destination> findByName(String name);
 }

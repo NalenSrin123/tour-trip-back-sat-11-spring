@@ -9,7 +9,7 @@ import java.util.UUID;
 public class PaymentGateway {
 
     public boolean processPayment(String method, BigDecimal amount) {
-        // Simulates connection to ABA Pay or Credit Card Processor API
+        // Simulates connection to the KHQR (Bakong) or Credit Card processor API
         // Returns true if transaction is approved
         return true;
     }

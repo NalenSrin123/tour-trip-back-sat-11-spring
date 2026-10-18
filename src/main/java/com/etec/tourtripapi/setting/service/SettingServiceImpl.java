@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,9 @@ public class SettingServiceImpl implements SettingService {
     public List<SettingResponse> getAllSettings() {
         return settingRepository.findAll().stream()
                 .map(settingMapper::toResponse)
+                .sorted(Comparator
+                        .comparing(SettingResponse::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(SettingResponse::getId, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
     }
 

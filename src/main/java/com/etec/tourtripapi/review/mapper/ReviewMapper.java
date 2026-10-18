@@ -16,6 +16,8 @@ public class ReviewMapper {
         response.setTourTitle(review.getTour() != null ? review.getTour().getTitle() : null);
         response.setUserId(review.getUser() != null ? review.getUser().getId() : null);
         response.setUserEmail(review.getUser() != null ? review.getUser().getEmail() : null);
+        response.setUserName(review.getUser() != null ? review.getUser().getFullName() : null);
+        response.setUserAvatarUrl(review.getUser() != null ? review.getUser().getAvatarUrl() : null);
         response.setBookingId(review.getBooking() != null ? review.getBooking().getId() : null);
         response.setRating(review.getRating());
         response.setComment(review.getComment());

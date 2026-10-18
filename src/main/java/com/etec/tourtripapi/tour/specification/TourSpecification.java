@@ -4,7 +4,6 @@ import com.etec.tourtripapi.tour.entity.Tour;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
-
 public class TourSpecification {
 
     public static Specification<Tour> hasDestinationId(Long destinationId) {

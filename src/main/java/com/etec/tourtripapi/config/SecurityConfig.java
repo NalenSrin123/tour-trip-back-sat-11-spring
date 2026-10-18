@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/schedules/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tours/*/schedules/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tours/*/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/settings/**").permitAll()
 
                         // 3. Admin-Only Management for Categories
@@ -99,6 +100,7 @@ public class SecurityConfig {
 
                         // 10. Refund
                         .requestMatchers(HttpMethod.POST, "/api/v1/refunds").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/refunds/my-refunds").authenticated()
                         .requestMatchers("/api/v1/refunds/**").hasRole("ADMIN")
 
                         // 11. Notification

@@ -24,6 +24,11 @@ public class ReviewController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @GetMapping("/reviews")
+    public ResponseEntity<List<ReviewResponse>> getAllReviews() {
+        return ResponseEntity.ok(reviewService.getAllReviews());
+    }
+
     @GetMapping("/tours/{tourId}/reviews")
     public ResponseEntity<List<ReviewResponse>> getReviewsByTourId(@PathVariable Long tourId) {
         return ResponseEntity.ok(reviewService.getReviewsByTourId(tourId));

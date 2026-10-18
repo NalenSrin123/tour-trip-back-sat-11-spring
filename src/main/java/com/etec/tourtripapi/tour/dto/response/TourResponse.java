@@ -22,5 +22,5 @@ public class TourResponse {
     private BigDecimal ratingAvg;
     private Boolean isPublished;
     private LocalDateTime createdAt;
-    private List<String> images;
+    private List<ImageResponse> images;
 }

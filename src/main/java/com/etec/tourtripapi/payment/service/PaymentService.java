@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface PaymentService {
     PaymentResponse makePayment(PaymentRequest request);
+    PaymentResponse updatePaymentStatus(Long id, String status);
     PaymentResponse getPaymentById(Long id);
     PaymentResponse getPaymentByBookingId(Long bookingId);
     List<PaymentResponse> getAllPayments();

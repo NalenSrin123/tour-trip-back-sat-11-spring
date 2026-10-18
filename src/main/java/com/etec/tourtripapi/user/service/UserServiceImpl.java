@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.user.service;
 
+import com.etec.tourtripapi.common.exception.BadRequestException;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
 import com.etec.tourtripapi.role.entity.Role;
@@ -10,10 +11,13 @@ import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +64,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User updateRoles(Long id, Set<String> roleNames) {
+        if (roleNames == null || roleNames.isEmpty()) {
+            throw new BadRequestException("Error: At least one role is required!");
+        }
+
+        User user = getUserById(id);
+
+        Set<Role> roles = roleNames.stream()
+                .map(roleService::findByName)
+                .collect(Collectors.toSet());
+        user.setRoles(roles);
+
+        return userRepository.save(user);
+    }
+
+    @Override
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("Error: User not found with id " + id);
@@ -75,6 +95,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 }

@@ -17,6 +17,11 @@ public class TourScheduleController {
 
     private final TourScheduleService scheduleService;
 
+    @GetMapping("/schedules")
+    public ResponseEntity<List<TourScheduleResponse>> getAllSchedules() {
+        return ResponseEntity.ok(scheduleService.getAllSchedules());
+    }
+
     @PostMapping("/tours/{tourId}/schedules")
     public ResponseEntity<TourScheduleResponse> createSchedule(
             @PathVariable Long tourId,

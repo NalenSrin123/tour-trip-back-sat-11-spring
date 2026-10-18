@@ -12,4 +12,6 @@ public interface TourScheduleService {
     TourScheduleResponse getScheduleById(Long id);
     TourScheduleResponse updateSchedule(Long id, TourScheduleRequest request);
     void deleteSchedule(Long id);
+    List<TourScheduleResponse> getAllSchedules();
+
 }

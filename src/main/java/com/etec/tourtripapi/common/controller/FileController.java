@@ -4,6 +4,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +24,10 @@ public class FileController {
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists()) {
+                MediaType contentType = MediaTypeFactory.getMediaType(resource)
+                        .orElse(MediaType.APPLICATION_OCTET_STREAM);
                 return ResponseEntity.ok()
-                        .contentType(MediaType.IMAGE_JPEG) // Can be adjusted or auto-detected
+                        .contentType(contentType)
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                         .body(resource);
             } else {
