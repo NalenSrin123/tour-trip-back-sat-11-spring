@@ -5,4 +5,4 @@ COPY .mvn/ .mvn/
 COPY src/ src/
 RUN ./mvnw clean package -DskipTests -q && cp target/tour-trip-api-*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx256m", "-jar", "app.jar"]
