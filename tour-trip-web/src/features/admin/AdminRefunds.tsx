@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Check, X, Loader2, CircleCheckBig } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../api/client';
-import { extractData } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { Refund, RefundStatus, BookingStatus } from '../../types';
 
@@ -17,30 +16,16 @@ const methodClass = (method: string) =>
   method === 'KHQR' ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-600';
 
 export const AdminRefunds: React.FC = () => {
-  const [refunds, setRefunds] = useState<Refund[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(refunds, 12);
-
-  const fetchRefunds = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/api/v1/refunds');
-      setRefunds(extractData(res));
-    } catch (err) {
-      toast.error('Failed to load refunds');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRefunds();
-  }, []);
+  const {
+    items: refunds,
+    isLoading: loading,
+    refetch,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<Refund>('admin-refunds', '/api/v1/refunds/page', { pageSize: 12 });
 
   const handleStatus = async (id: number, status: RefundStatus) => {
     try {
-      const res = await apiClient.patch(`/api/v1/refunds/${id}/status?status=${status}`);
-      const updated: Refund = res.data;
+      await apiClient.patch(`/api/v1/refunds/${id}/status?status=${status}`);
       toast.success(
         status === 'APPROVED'
           ? 'Refund approved — payment refunded and booking cancelled'
@@ -48,9 +33,12 @@ export const AdminRefunds: React.FC = () => {
             ? 'Refund completed'
             : `Refund ${status.toLowerCase()}`
       );
-      setRefunds(prev => prev.map(r => r.id === id ? { ...r, ...updated } : r));
-    } catch (err: any) {
-      toast.error('Failed to update refund: ' + (err?.response?.data?.message || err?.message || 'Server error'));
+      refetch();
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as { message?: string })?.message
+        || 'Server error';
+      toast.error('Failed to update refund: ' + message);
     }
   };
 
@@ -91,7 +79,7 @@ export const AdminRefunds: React.FC = () => {
                 <td colSpan={6} className="p-10 text-center text-gray-400">No refund requests found.</td>
               </tr>
             ) : (
-              pageItems.map(r => (
+              refunds.map(r => (
                 <tr key={r.id}>
                   <td className="p-5 font-mono font-bold align-top">#{r.id}</td>
                   <td className="p-5 align-top">

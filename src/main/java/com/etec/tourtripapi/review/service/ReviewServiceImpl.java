@@ -9,11 +9,18 @@ import com.etec.tourtripapi.review.dto.response.ReviewResponse;
 import com.etec.tourtripapi.review.entity.Review;
 import com.etec.tourtripapi.review.mapper.ReviewMapper;
 import com.etec.tourtripapi.review.repository.ReviewRepository;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.repository.TourRepository;
 import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +80,31 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(reviewMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<ReviewResponse> getReviews(String search, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+
+        Specification<Review> spec = (root, query, cb) -> {
+            if (search == null || search.isBlank()) {
+                return null;
+            }
+            String like = "%" + search.trim().toLowerCase() + "%";
+            return cb.or(
+                    cb.like(cb.lower(root.get("comment")), like),
+                    cb.like(cb.lower(root.join("user", JoinType.LEFT).get("fullName")), like),
+                    cb.like(cb.lower(root.join("tour", JoinType.LEFT).get("title")), like)
+            );
+        };
+
+        Page<Review> result = reviewRepository.findAll(spec, pageable);
+        List<ReviewResponse> content = result.getContent().stream()
+                .map(reviewMapper::toResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
     }
 
     @Override

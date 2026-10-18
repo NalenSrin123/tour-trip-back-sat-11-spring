@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Loader2, Check, X, CircleCheckBig } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../api/client';
-import { extractData } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { Booking, BookingStatus } from '../../types';
 
@@ -13,29 +12,18 @@ const statusClass = (status: BookingStatus) =>
   status === 'CANCELLED' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700';
 
 export const AdminBookings: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(bookings, 12);
-
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/bookings');
-        setBookings(extractData(res));
-      } catch {
-        toast.error('Failed to load bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBookings();
-  }, []);
+  const {
+    items: bookings,
+    isLoading: loading,
+    refetch,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<Booking>('admin-bookings', '/api/v1/bookings/page', { pageSize: 12 });
 
   const handleUpdateStatus = async (id: number, status: BookingStatus) => {
     try {
       await apiClient.patch(`/api/v1/bookings/${id}/status?status=${status}`);
       toast.success(`Booking status updated to ${status}`);
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+      refetch();
     } catch {
       toast.error('Failed to update booking status');
     }
@@ -77,7 +65,7 @@ export const AdminBookings: React.FC = () => {
                 <td colSpan={7} className="p-10 text-center text-gray-400">No bookings found.</td>
               </tr>
             ) : (
-              pageItems.map(b => (
+              bookings.map(b => (
                 <tr key={b.id}>
                   <td className="p-5 font-mono font-bold">#{b.id}</td>
                   <td className="p-5">

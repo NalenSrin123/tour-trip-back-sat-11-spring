@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.payment.controller;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.payment.dto.request.PaymentRequest;
 import com.etec.tourtripapi.payment.dto.response.PaymentResponse;
 import com.etec.tourtripapi.payment.service.PaymentService;
@@ -26,6 +27,13 @@ public class PaymentController {
     @GetMapping
     public ResponseEntity<List<PaymentResponse>> getAllPayments() {
         return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<PaymentResponse>> getPaymentsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(paymentService.getPayments(page, size));
     }
 
     @GetMapping("/{id}")

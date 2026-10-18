@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.refund.controller;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.refund.dto.request.RefundRequest;
 import com.etec.tourtripapi.refund.dto.response.RefundResponse;
 import com.etec.tourtripapi.refund.service.RefundService;
@@ -27,6 +28,13 @@ public class RefundController {
     @GetMapping
     public ResponseEntity<List<RefundResponse>> getAllRefunds() {
         return ResponseEntity.ok(refundService.getAllRefunds());
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<RefundResponse>> getRefundsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(refundService.getRefunds(page, size));
     }
 
     @GetMapping("/my-refunds")

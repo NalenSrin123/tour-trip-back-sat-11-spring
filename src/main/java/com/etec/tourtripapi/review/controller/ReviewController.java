@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.review.controller;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.review.dto.request.ReviewRequest;
 import com.etec.tourtripapi.review.dto.response.ReviewResponse;
 import com.etec.tourtripapi.review.service.ReviewService;
@@ -27,6 +28,14 @@ public class ReviewController {
     @GetMapping("/reviews")
     public ResponseEntity<List<ReviewResponse>> getAllReviews() {
         return ResponseEntity.ok(reviewService.getAllReviews());
+    }
+
+    @GetMapping("/reviews/page")
+    public ResponseEntity<PageResponse<ReviewResponse>> getReviewsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(reviewService.getReviews(search, page, size));
     }
 
     @GetMapping("/tours/{tourId}/reviews")

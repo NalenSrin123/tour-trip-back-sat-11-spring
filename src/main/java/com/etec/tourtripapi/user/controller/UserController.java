@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.user.controller;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.user.dto.request.SignupRequest;
 import com.etec.tourtripapi.user.dto.request.UpdateRequest;
 import com.etec.tourtripapi.user.dto.request.UserRolesRequest;
@@ -10,6 +11,9 @@ import com.etec.tourtripapi.user.repository.UserRepository;
 import com.etec.tourtripapi.user.service.UserService;
 import com.etec.tourtripapi.user.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -52,6 +56,31 @@ public class UserController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responseList);
+    }
+
+    // READ: Get a page of users (server-side pagination for the admin table)
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<UserResponse>> getUsersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Boolean active) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+
+        Specification<User> spec = Specification.where(UserSpecification.hasFullName(fullName))
+                .and(UserSpecification.hasEmail(email))
+                .and(UserSpecification.isActive(active));
+
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<User> result = userRepository.findAll(spec, pageable);
+        List<UserResponse> content = result.getContent().stream()
+                .map(userMapper::toResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(PageResponse.of(content, safePage, safeSize, result.getTotalElements()));
     }
 
     // READ: Get user by ID

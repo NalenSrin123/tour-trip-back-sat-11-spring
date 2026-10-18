@@ -2,6 +2,7 @@ package com.etec.tourtripapi.schedule.service;
 
 import com.etec.tourtripapi.common.enums.ScheduleStatus;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.schedule.dto.request.TourScheduleRequest;
 import com.etec.tourtripapi.schedule.dto.response.TourScheduleResponse;
 import com.etec.tourtripapi.schedule.entity.TourSchedule;
@@ -10,6 +11,9 @@ import com.etec.tourtripapi.schedule.repository.TourScheduleRepository;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.repository.TourRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +33,18 @@ public class TourScheduleServiceImpl implements TourScheduleService {
         return scheduleRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(scheduleMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<TourScheduleResponse> getSchedules(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<TourSchedule> result = scheduleRepository.findAll(pageable);
+        List<TourScheduleResponse> content = result.getContent().stream()
+                .map(scheduleMapper::toResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
     }
 
 

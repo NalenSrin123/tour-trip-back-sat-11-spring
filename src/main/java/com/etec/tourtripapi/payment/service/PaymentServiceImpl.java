@@ -7,6 +7,7 @@ import com.etec.tourtripapi.common.enums.PaymentMethod;
 import com.etec.tourtripapi.common.enums.PaymentStatus;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.notification.service.NotificationService;
 import com.etec.tourtripapi.payment.dto.request.PaymentRequest;
 import com.etec.tourtripapi.payment.dto.response.PaymentResponse;
@@ -15,6 +16,9 @@ import com.etec.tourtripapi.payment.gateway.PaymentGateway;
 import com.etec.tourtripapi.payment.mapper.PaymentMapper;
 import com.etec.tourtripapi.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -163,5 +167,17 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(paymentMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<PaymentResponse> getPayments(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Payment> result = paymentRepository.findAll(pageable);
+        List<PaymentResponse> content = result.getContent().stream()
+                .map(paymentMapper::toResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
     }
 }

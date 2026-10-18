@@ -1,6 +1,7 @@
 package com.etec.tourtripapi.schedule.service;
 
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.schedule.dto.request.TourScheduleRequest;
 import com.etec.tourtripapi.schedule.dto.response.TourScheduleResponse;
 
@@ -13,5 +14,6 @@ public interface TourScheduleService {
     TourScheduleResponse updateSchedule(Long id, TourScheduleRequest request);
     void deleteSchedule(Long id);
     List<TourScheduleResponse> getAllSchedules();
+    PageResponse<TourScheduleResponse> getSchedules(int page, int size);
 
 }

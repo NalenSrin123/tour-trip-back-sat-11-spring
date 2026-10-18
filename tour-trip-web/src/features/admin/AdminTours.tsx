@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient, API_URL } from '../../api/client';
 import { extractData, getTourImageUrl } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { Tour, Category, Destination } from '../../types';
 import { getTourDestination, getTourCategory } from '../../types';
 
 export const AdminTours: React.FC = () => {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(tours, 12);
+  const {
+    items: tours,
+    isLoading: loading,
+    refetch,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<Tour>('admin-tours', '/api/v1/tours/page', { pageSize: 12 });
+
+  const destinationsQuery = useQuery({
+    queryKey: ['destinations'],
+    queryFn: () => apiClient.get('/api/v1/destinations'),
+    select: (res): Destination[] => extractData(res),
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => apiClient.get('/api/v1/categories'),
+    select: (res): Category[] => extractData(res),
+  });
+  const destinations = destinationsQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTourId, setEditingTourId] = useState<number | null>(null);
@@ -32,33 +47,6 @@ export const AdminTours: React.FC = () => {
   const [tourImages, setTourImages] = useState<{id?: number, url: string}[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [toursRes, destRes, catRes] = await Promise.all([
-          apiClient.get('/api/v1/tours'),
-          apiClient.get('/api/v1/destinations'),
-          apiClient.get('/api/v1/categories'),
-        ]);
-
-        setTours(extractData(toursRes));
-        if (destRes?.data && Array.isArray(destRes.data) && destRes.data.length > 0) {
-          setDestinations(destRes.data);
-          setDestinationId(destRes.data[0].id);
-        }
-        if (catRes?.data && Array.isArray(catRes.data) && catRes.data.length > 0) {
-          setCategories(catRes.data);
-          setCategoryId(catRes.data[0].id);
-        }
-      } catch {
-        toast.error('Failed to load tours and categories');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleOpenCreate = () => {
     setEditingTourId(null);
@@ -94,7 +82,7 @@ export const AdminTours: React.FC = () => {
     setIsPublished(tour.isPublished !== false);
 
     // Map ImageResponse objects to our local preview state
-    const existingImages = (tour.images || []).map((img: any) => {
+    const existingImages = (tour.images || []).map((img) => {
       let url = '';
       if (typeof img === 'string') {
         url = img;
@@ -120,7 +108,7 @@ export const AdminTours: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/tours/${id}`);
       toast.success('Tour deleted successfully');
-      setTours(prev => prev.filter(t => t.id !== id));
+      refetch();
     } catch {
       toast.error('Failed to delete tour');
     }
@@ -199,25 +187,23 @@ export const AdminTours: React.FC = () => {
           formData.append('imagesToDelete', id.toString());
         });
 
-        const res = await apiClient.put(`/api/v1/tours/${editingTourId}`, formData, {
+        await apiClient.put(`/api/v1/tours/${editingTourId}`, formData, {
           headers: { 'Content-Type': undefined }
         });
         toast.success('Tour updated successfully');
-        const updated = res.data;
-        setTours(prev => prev.map(t => t.id === editingTourId ? updated : t));
       } else {
-        const res = await apiClient.post('/api/v1/tours', formData, {
+        await apiClient.post('/api/v1/tours', formData, {
           headers: { 'Content-Type': undefined }
         });
         toast.success('Tour created successfully');
-        const created = res.data;
-        setTours(prev => [...prev, created]);
       }
       setModalOpen(false);
-    } catch (err: any) {
-      console.error('API Error:', err);
-      const errorMsg = err.response?.data?.message || err.message || 'Internal Server Error';
-      toast.error(`Tour ${editingTourId ? 'updated' : 'created'} failed: ${errorMsg}`);
+      refetch();
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as { message?: string })?.message
+        || 'Internal Server Error';
+      toast.error(`Tour ${editingTourId ? 'updated' : 'created'} failed: ${message}`);
     }
   };
 
@@ -265,7 +251,7 @@ export const AdminTours: React.FC = () => {
                 </td>
               </tr>
             )}
-            {!loading && pageItems.map(t => (
+            {!loading && tours.map(t => (
               <tr key={t.id}>
                 <td className="p-5 font-mono font-bold">#{t.id}</td>
                 <td className="p-5">

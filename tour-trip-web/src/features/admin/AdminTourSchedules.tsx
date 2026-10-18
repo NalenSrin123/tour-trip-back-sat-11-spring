@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '../../api/client';
-import { extractData } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { Tour } from '../../types';
 
@@ -18,10 +18,20 @@ interface TourSchedule {
 }
 
 export const AdminTourSchedules: React.FC = () => {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [schedules, setSchedules] = useState<TourSchedule[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(schedules, 12);
+  const {
+    items: schedules,
+    isLoading: loading,
+    refetch,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<TourSchedule>('admin-schedules', '/api/v1/schedules/page', { pageSize: 12 });
+
+  const toursQuery = useQuery({
+    queryKey: ['tours', 'select'],
+    queryFn: () => apiClient.get('/api/v1/tours/page', { params: { page: 0, size: 50 } }),
+    select: (res): Tour[] => res.data?.content ?? [],
+  });
+  const tours = toursQuery.data ?? [];
+
   const [modalOpen, setModalOpen] = useState(false);
 
   const [selectedTourId, setSelectedTourId] = useState<number | ''>('');
@@ -30,34 +40,6 @@ export const AdminTourSchedules: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState(20);
   const [status, setStatus] = useState<'ACTIVE' | 'FULL' | 'CANCELLED' | 'COMPLETED'>('ACTIVE');
-
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/tours');
-        setTours(extractData(res));
-      } catch {
-        toast.error('Failed to load tours');
-      }
-    };
-    fetchTours();
-  }, []);
-
-  const fetchAllSchedules = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/api/v1/schedules');
-      setSchedules(extractData(res));
-    } catch {
-      toast.error('Failed to load all schedules');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllSchedules();
-  }, []);
 
   const handleOpenCreate = () => {
     setEditingScheduleId(null);
@@ -96,7 +78,7 @@ export const AdminTourSchedules: React.FC = () => {
         toast.success('Schedule created successfully');
       }
       setModalOpen(false);
-      fetchAllSchedules();
+      refetch();
     } catch {
       toast.error('Failed to save schedule');
     }
@@ -107,7 +89,7 @@ export const AdminTourSchedules: React.FC = () => {
     try {
       await apiClient.delete(`/api/v1/schedules/${id}`);
       toast.success('Schedule deleted successfully');
-      setSchedules(prev => prev.filter(s => s.id !== id));
+      refetch();
     } catch {
       toast.error('Failed to delete schedule');
     }
@@ -155,7 +137,7 @@ export const AdminTourSchedules: React.FC = () => {
                 <td colSpan={7} className="p-10 text-center text-gray-400">No schedules found.</td>
               </tr>
             ) : (
-              pageItems.map(s => (
+              schedules.map(s => (
                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                   <td className="p-5 font-mono font-bold">#{s.id}</td>
                   <td className="p-5 font-semibold">{s.tourTitle || `Tour #${s.tourId}`}</td>

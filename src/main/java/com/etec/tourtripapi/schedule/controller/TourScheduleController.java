@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.schedule.controller;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.schedule.dto.request.TourScheduleRequest;
 import com.etec.tourtripapi.schedule.dto.response.TourScheduleResponse;
 import com.etec.tourtripapi.schedule.service.TourScheduleService;
@@ -20,6 +21,13 @@ public class TourScheduleController {
     @GetMapping("/schedules")
     public ResponseEntity<List<TourScheduleResponse>> getAllSchedules() {
         return ResponseEntity.ok(scheduleService.getAllSchedules());
+    }
+
+    @GetMapping("/schedules/page")
+    public ResponseEntity<PageResponse<TourScheduleResponse>> getSchedulesPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(scheduleService.getSchedules(page, size));
     }
 
     @PostMapping("/tours/{tourId}/schedules")

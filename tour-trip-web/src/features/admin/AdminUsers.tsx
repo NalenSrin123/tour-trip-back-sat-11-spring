@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient, API_URL } from '../../api/client';
 import { extractData } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { User } from '../../types';
 
@@ -14,36 +15,23 @@ interface RoleOption {
 }
 
 export const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const {
+    items: users,
+    isLoading: loading,
+    refetch,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<User>('admin-users', '/api/v1/users/page', { pageSize: 12 });
+
+  const rolesQuery = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => apiClient.get('/api/v1/roles'),
+    select: (res): RoleOption[] => extractData(res),
+  });
+  const roleOptions = rolesQuery.data ?? [];
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(users, 12);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/users');
-        setUsers(extractData(res));
-      } catch {
-        toast.error('Failed to load users');
-      } finally {
-        setLoading(false);
-      }
-    };
-    const fetchRoles = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/roles');
-        setRoleOptions(extractData(res));
-      } catch {
-        toast.error('Failed to load roles');
-      }
-    };
-    fetchUsers();
-    fetchRoles();
-  }, []);
 
   const handleOpenRoleModal = (user: User) => {
     setSelectedUser(user);
@@ -65,7 +53,7 @@ export const AdminUsers: React.FC = () => {
     try {
       await apiClient.put(`/api/v1/users/${selectedUser.id}/roles`, { roles: selectedRoles });
       toast.success(`Roles ${selectedRoles.join(', ')} assigned to ${selectedUser.fullName} successfully`);
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, roles: selectedRoles } : u));
+      refetch();
       setRoleModalOpen(false);
     } catch {
       toast.error('Failed to assign role');
@@ -105,7 +93,7 @@ export const AdminUsers: React.FC = () => {
                 <td colSpan={6} className="p-10 text-center text-gray-400">No users found.</td>
               </tr>
             )}
-            {!loading && pageItems.map(u => {
+            {!loading && users.map(u => {
               const avatarUrl = u.avatarUrl?.startsWith('http')
                 ? u.avatarUrl
                 : (u.avatarUrl ? `${API_URL}${u.avatarUrl}` : '');

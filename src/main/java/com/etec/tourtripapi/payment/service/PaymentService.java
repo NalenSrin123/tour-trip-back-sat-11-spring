@@ -1,5 +1,6 @@
 package com.etec.tourtripapi.payment.service;
 
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.payment.dto.request.PaymentRequest;
 import com.etec.tourtripapi.payment.dto.response.PaymentResponse;
 
@@ -11,4 +12,5 @@ public interface PaymentService {
     PaymentResponse getPaymentById(Long id);
     PaymentResponse getPaymentByBookingId(Long bookingId);
     List<PaymentResponse> getAllPayments();
+    PageResponse<PaymentResponse> getPayments(int page, int size);
 }

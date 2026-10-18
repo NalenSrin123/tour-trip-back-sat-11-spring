@@ -7,6 +7,7 @@ import com.etec.tourtripapi.common.enums.PaymentStatus;
 import com.etec.tourtripapi.common.enums.RefundStatus;
 import com.etec.tourtripapi.common.exception.ConflictException;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.notification.service.NotificationService;
 import com.etec.tourtripapi.payment.entity.Payment;
 import com.etec.tourtripapi.payment.repository.PaymentRepository;
@@ -20,6 +21,9 @@ import com.etec.tourtripapi.schedule.repository.TourScheduleRepository;
 import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +94,18 @@ public class RefundServiceImpl implements RefundService {
         return refundRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .map(refundMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<RefundResponse> getRefunds(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Refund> result = refundRepository.findAll(pageable);
+        List<RefundResponse> content = result.getContent().stream()
+                .map(refundMapper::toResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
     }
 
     @Override

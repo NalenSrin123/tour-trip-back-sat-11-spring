@@ -1,30 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { apiClient, API_URL } from '../../api/client';
-import { extractData } from '../../api/utils';
-import { usePagination } from '../../hooks/usePagination';
+import { API_URL } from '../../api/client';
+import { usePagedQuery } from '../../hooks/usePagedQuery';
 import { Pagination } from '../../components/Pagination';
 import type { Tour } from '../../types';
 
 export const AdminTourImages: React.FC = () => {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination(tours, 12);
-
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/tours');
-        setTours(extractData(res));
-      } catch {
-        toast.error('Failed to load tours images');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTours();
-  }, []);
+  const {
+    items: tours,
+    isLoading: loading,
+    page, setPage, totalPages, total, pageSize,
+  } = usePagedQuery<Tour>('admin-tour-images', '/api/v1/tours/page', { pageSize: 12 });
 
   return (
     <div className="space-y-6">
@@ -47,7 +33,7 @@ export const AdminTourImages: React.FC = () => {
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {pageItems.map(tour => (
+          {tours.map(tour => (
             <div key={tour.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm space-y-4">
               <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <h3 className="font-bold text-gray-900">{tour.title}</h3>

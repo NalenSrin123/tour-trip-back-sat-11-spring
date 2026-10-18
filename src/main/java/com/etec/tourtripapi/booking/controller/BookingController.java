@@ -5,6 +5,7 @@ import com.etec.tourtripapi.booking.dto.response.BookingResponse;
 import com.etec.tourtripapi.booking.entity.Booking;
 import com.etec.tourtripapi.booking.service.BookingService;
 import com.etec.tourtripapi.booking.specification.BookingSpecification;
+import com.etec.tourtripapi.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,21 @@ public class BookingController {
     public ResponseEntity<List<BookingResponse>> getMyBookings(Authentication authentication) {
         String email = authentication.getName();
         return ResponseEntity.ok(bookingService.getMyBookings(email));
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<BookingResponse>> getBookingsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long scheduleId) {
+
+        Specification<Booking> spec = Specification.where(BookingSpecification.hasStatus(status))
+                .and(BookingSpecification.hasUserId(userId))
+                .and(BookingSpecification.hasScheduleId(scheduleId));
+
+        return ResponseEntity.ok(bookingService.getBookings(spec, page, size));
     }
 
     @GetMapping("/{id}")
