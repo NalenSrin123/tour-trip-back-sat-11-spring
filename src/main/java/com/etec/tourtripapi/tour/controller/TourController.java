@@ -2,6 +2,7 @@ package com.etec.tourtripapi.tour.controller;
 
 import com.etec.tourtripapi.tour.dto.request.TourRequest;
 import com.etec.tourtripapi.tour.dto.response.TourResponse;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.service.TourService;
 import com.etec.tourtripapi.tour.specification.TourSpecification;
@@ -45,6 +46,32 @@ public class TourController {
                 .and(TourSpecification.isPublished(isPublished));
 
         List<TourResponse> response = tourService.getAllTours(spec);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<PageResponse<TourResponse>> getToursPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) Long destinationId,
+            @RequestParam(required = false) String destinationName,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Integer durationDays,
+            @RequestParam(required = false) Boolean isPublished) {
+
+        Specification<Tour> spec = Specification.where(TourSpecification.titleContains(search))
+                .and(TourSpecification.hasDestinationId(destinationId))
+                .and(TourSpecification.hasDestinationName(destinationName))
+                .and(TourSpecification.hasCategoryId(categoryId))
+                .and(TourSpecification.hasCategoryName(categoryName))
+                .and(TourSpecification.maxPrice(maxPrice))
+                .and(TourSpecification.hasDurationDays(durationDays))
+                .and(TourSpecification.isPublished(isPublished));
+
+        PageResponse<TourResponse> response = tourService.getTours(spec, page, size);
         return ResponseEntity.ok(response);
     }
 

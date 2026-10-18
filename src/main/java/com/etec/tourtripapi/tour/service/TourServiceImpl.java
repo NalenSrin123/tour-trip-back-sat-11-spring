@@ -3,6 +3,7 @@ package com.etec.tourtripapi.tour.service;
 import com.etec.tourtripapi.category.entity.Category;
 import com.etec.tourtripapi.category.repository.CategoryRepository;
 import com.etec.tourtripapi.common.exception.ResourceNotFoundException;
+import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.common.service.FileStorageService;
 import com.etec.tourtripapi.destination.entity.Destination;
 import com.etec.tourtripapi.destination.repository.DestinationRepository;
@@ -16,6 +17,9 @@ import com.etec.tourtripapi.tour.repository.TourRepository;
 import com.etec.tourtripapi.user.entity.User;
 import com.etec.tourtripapi.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -92,6 +96,19 @@ public class TourServiceImpl implements TourService {
         return tours.stream()
                 .map(tourMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<TourResponse> getTours(Specification<Tour> spec, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Tour> result = tourRepository.findAll(spec, pageable);
+        List<TourResponse> content = result.getContent().stream()
+                .map(tourMapper::toResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
     }
 
     @Override

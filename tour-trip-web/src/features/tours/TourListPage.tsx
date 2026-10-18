@@ -1,52 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Star, Heart, Clock, Compass } from 'lucide-react';
+import { Search, MapPin, Star, Heart, Clock, Compass, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { Tour } from '../../types';
-import { getTourDestination, getTourCategory } from '../../types';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import type { Tour, Category, Destination } from '../../types';
+import { getTourDestination } from '../../types';
 import { apiClient } from '../../api/client';
-import { getTourImageUrl } from '../../api/utils';
+import { extractData, getTourImageUrl } from '../../api/utils';
 import { toast } from 'sonner';
+
+type TourPage = {
+  content: Tour[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasMore: boolean;
+};
+
+const PAGE_SIZE = 6;
 
 export const TourListPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get('search') || '';
   const destination = searchParams.get('destination') || '';
   const category = searchParams.get('category') || '';
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
   const [maxPrice, setMaxPrice] = useState(200);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState(200);
   const [favorites, setFavorites] = useState<number[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+
+  // Debounce the price slider so dragging it doesn't fire a request per step.
+  useEffect(() => {
+    const t = setTimeout(() => setAppliedMaxPrice(maxPrice), 350);
+    return () => clearTimeout(t);
+  }, [maxPrice]);
 
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
     setSearchParams(next, { replace: true });
-    setCurrentPage(1);
   };
 
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        setLoading(true);
-        const res = await apiClient.get('/api/v1/tours');
-        const data = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
-        setTours(data);
-      } catch (err) {
-        toast.error('Failed to load tours');
-        setTours([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTours();
-  }, []);
+  const toursQuery = useInfiniteQuery({
+    queryKey: ['tours', 'page', { search, destination, category, appliedMaxPrice }],
+    queryFn: async ({ pageParam }) => {
+      const res = await apiClient.get<TourPage>('/api/v1/tours/page', {
+        params: {
+          page: pageParam,
+          size: PAGE_SIZE,
+          search: search || undefined,
+          destinationName: destination || undefined,
+          categoryName: category || undefined,
+          maxPrice: appliedMaxPrice,
+        },
+      });
+      return res.data;
+    },
+    initialPageParam: 0,
+    getNextPageParam: (last) => (last?.hasMore ? last.page + 1 : undefined),
+  });
 
-  const destinationOptions = Array.from(new Set(tours.map(t => getTourDestination(t).name).filter(n => n && n !== 'Unknown Destination')));
-  const categoryOptions = Array.from(new Set(tours.map(t => getTourCategory(t).name).filter(n => n && n !== 'Unknown Category')));
+  const destinationsQuery = useQuery({
+    queryKey: ['destinations'],
+    queryFn: () => apiClient.get('/api/v1/destinations'),
+    select: (res): Destination[] => extractData(res),
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => apiClient.get('/api/v1/categories'),
+    select: (res): Category[] => extractData(res),
+  });
+
+  const tours = toursQuery.data?.pages.flatMap(p => p.content ?? []) ?? [];
+  const totalTours = toursQuery.data?.pages[0]?.totalElements ?? 0;
+
+  const destinationOptions = Array.from(
+    new Set((destinationsQuery.data ?? []).map(d => d.name).filter(Boolean))
+  ).sort();
+  const categoryOptions = Array.from(
+    new Set((categoriesQuery.data ?? []).map(c => c.name).filter(Boolean))
+  ).sort();
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,16 +90,23 @@ export const TourListPage: React.FC = () => {
     toast.success(favorites.includes(id) ? 'Removed from favorites' : 'Added to favorites');
   };
 
-  const filteredTours = tours.filter(tour => {
-    const matchesSearch = !search || tour.title?.toLowerCase().includes(search.toLowerCase()) || tour.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesDest = !destination || getTourDestination(tour).name === destination;
-    const matchesCat = !category || getTourCategory(tour).name === category;
-    const matchesPrice = (tour.price ?? 0) <= maxPrice;
-    return matchesSearch && matchesDest && matchesCat && matchesPrice;
-  });
-
-  const totalPages = Math.ceil(filteredTours.length / itemsPerPage);
-  const paginatedTours = filteredTours.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Auto-load the next page when the sentinel scrolls into view.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = toursQuery;
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '400px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, tours.length]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-10">
@@ -73,6 +114,9 @@ export const TourListPage: React.FC = () => {
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <h1 className="text-4xl font-extrabold text-gray-900">Explore All Tours</h1>
         <p className="text-sm text-gray-500">Discover handpicked guided tours across Cambodia with transparent pricing and instant confirmation.</p>
+        {!toursQuery.isPending && (
+          <p className="text-xs font-semibold text-teal-600">{totalTours} tour{totalTours === 1 ? '' : 's'} found</p>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -125,7 +169,7 @@ export const TourListPage: React.FC = () => {
             max={500}
             step={10}
             value={maxPrice}
-            onChange={e => { setMaxPrice(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={e => setMaxPrice(Number(e.target.value))}
             className="w-full accent-teal-600 cursor-pointer"
           />
         </div>
@@ -151,7 +195,7 @@ export const TourListPage: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => { setSearchParams({}, { replace: true }); setCurrentPage(1); }}
+            onClick={() => setSearchParams({}, { replace: true })}
             className="text-xs font-semibold text-gray-400 hover:text-red-500 ml-1"
           >
             Clear all
@@ -160,13 +204,13 @@ export const TourListPage: React.FC = () => {
       )}
 
       {/* Tour Grid */}
-      {loading ? (
+      {toursQuery.isPending ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map(n => (
+          {Array.from({ length: PAGE_SIZE }).map((_, n) => (
             <div key={n} className="bg-white rounded-3xl h-96 animate-pulse bg-gray-200" />
           ))}
         </div>
-      ) : paginatedTours.length === 0 ? (
+      ) : tours.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
           <Compass className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-800">No tours found</h3>
@@ -174,14 +218,14 @@ export const TourListPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {paginatedTours.map((tour, idx) => {
+          {tours.map((tour, idx) => {
             const isFav = favorites.includes(tour.id);
             return (
               <motion.div
                 key={tour.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ delay: (idx % PAGE_SIZE) * 0.05 }}
               >
                 <Link
                   to={`/tours/${tour.id}`}
@@ -241,23 +285,33 @@ export const TourListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 pt-6">
-          {[...Array(totalPages)].map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentPage(idx + 1)}
-              className={`w-10 h-10 rounded-2xl font-semibold text-sm transition-all ${
-                currentPage === idx + 1 ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {idx + 1}
-            </button>
+      {/* Loading more */}
+      {toursQuery.isFetchingNextPage && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, n) => (
+            <div key={n} className="bg-white rounded-3xl h-96 animate-pulse bg-gray-200" />
           ))}
         </div>
+      )}
+
+      {/* Sentinel + load more */}
+      {hasNextPage && (
+        <div ref={sentinelRef} className="flex justify-center pt-4">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-60 transition-colors"
+          >
+            {isFetchingNextPage ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isFetchingNextPage ? 'Loading more...' : 'Load more tours'}
+          </button>
+        </div>
+      )}
+      {!hasNextPage && tours.length > 0 && (
+        <p className="text-center text-xs text-gray-400 pt-2">
+          You've reached the end · showing all {tours.length} tours
+        </p>
       )}
     </div>
   );
 };
-

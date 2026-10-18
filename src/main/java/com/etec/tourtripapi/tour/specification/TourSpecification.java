@@ -6,6 +6,27 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 public class TourSpecification {
 
+    public static Specification<Tour> titleContains(String search) {
+        return (root, query, criteriaBuilder) ->
+                (search == null || search.isBlank()) ? null
+                        : criteriaBuilder.like(criteriaBuilder.lower(root.get("title")),
+                                "%" + search.trim().toLowerCase() + "%");
+    }
+
+    public static Specification<Tour> hasDestinationName(String destinationName) {
+        return (root, query, criteriaBuilder) ->
+                (destinationName == null || destinationName.isBlank()) ? null
+                        : criteriaBuilder.equal(criteriaBuilder.lower(root.get("destination").get("name")),
+                                destinationName.trim().toLowerCase());
+    }
+
+    public static Specification<Tour> hasCategoryName(String categoryName) {
+        return (root, query, criteriaBuilder) ->
+                (categoryName == null || categoryName.isBlank()) ? null
+                        : criteriaBuilder.equal(criteriaBuilder.lower(root.get("category").get("name")),
+                                categoryName.trim().toLowerCase());
+    }
+
     public static Specification<Tour> hasDestinationId(Long destinationId) {
         return (root, query, criteriaBuilder) ->
                 destinationId == null ? null : criteriaBuilder.equal(root.get("destination").get("id"), destinationId);
