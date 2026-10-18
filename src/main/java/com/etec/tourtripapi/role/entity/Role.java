@@ -18,6 +18,7 @@ public class Role {
     @Column(nullable = false, unique = true)
     private String name; // e.g., CUSTOMER, ADMIN, GUIDE
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @CreationTimestamp

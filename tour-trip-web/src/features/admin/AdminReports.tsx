@@ -1,15 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar, CreditCard, RefreshCcw, DollarSign, Search, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '../../api/client';
 import { extractData } from '../../api/utils';
 import { usePagination } from '../../hooks/usePagination';
 import { Pagination } from '../../components/Pagination';
+import { Skeleton } from '../../components/Skeleton';
 import type { Booking, Payment, Refund, DashboardStats } from '../../types';
 
 const BOOKING_STATUSES = ['ALL', 'PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
 const PAYMENT_STATUSES = ['ALL', 'PAID', 'PENDING', 'FAILED', 'REFUNDED'];
+
+type StatsPayload = DashboardStats & { pendingRefunds?: number };
+
+const EMPTY_BOOKINGS: Booking[] = [];
+const EMPTY_PAYMENTS: Payment[] = [];
 
 const money = (n: number) => `$${Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
@@ -32,11 +39,6 @@ const statusBadge = (status?: string) => {
 };
 
 export const AdminReports: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [pendingRefunds, setPendingRefunds] = useState(0);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [refunds, setRefunds] = useState<Refund[]>([]);
   const [tab, setTab] = useState<'bookings' | 'payments'>('bookings');
   const [status, setStatus] = useState('ALL');
   const [from, setFrom] = useState('');
@@ -44,29 +46,39 @@ export const AdminReports: React.FC = () => {
   const [search, setSearch] = useState('');
   const [exporting, setExporting] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      const [statsRes, bookingsRes, paymentsRes, refundsRes] = await Promise.all([
-        apiClient.get('/api/v1/dashboard/stats').catch(() => null),
-        apiClient.get('/api/v1/bookings').catch(() => null),
-        apiClient.get('/api/v1/payments').catch(() => null),
-        apiClient.get('/api/v1/refunds').catch(() => null),
-      ]);
-      if (statsRes?.data) {
-        setStats({
-          totalRevenue: statsRes.data.totalRevenue ?? 0,
-          totalBookings: statsRes.data.totalBookings ?? 0,
-          totalTours: statsRes.data.totalTours ?? 0,
-          totalUsers: statsRes.data.totalUsers ?? 0,
-        });
-        setPendingRefunds(statsRes.data.pendingRefunds ?? 0);
+  const statsQuery = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: async (): Promise<StatsPayload> => (await apiClient.get('/api/v1/dashboard/stats')).data,
+  });
+  const bookingsQuery = useQuery({
+    queryKey: ['bookings'],
+    queryFn: () => apiClient.get('/api/v1/bookings'),
+    select: (res): Booking[] => extractData(res),
+  });
+  const paymentsQuery = useQuery({
+    queryKey: ['payments'],
+    queryFn: () => apiClient.get('/api/v1/payments'),
+    select: (res): Payment[] => extractData(res),
+  });
+  const refundsQuery = useQuery({
+    queryKey: ['refunds'],
+    queryFn: () => apiClient.get('/api/v1/refunds'),
+    select: (res): Refund[] => extractData(res),
+  });
+
+  const statsData = statsQuery.data;
+  const stats: DashboardStats | null = statsData
+    ? {
+        totalRevenue: statsData.totalRevenue ?? 0,
+        totalBookings: statsData.totalBookings ?? 0,
+        totalTours: statsData.totalTours ?? 0,
+        totalUsers: statsData.totalUsers ?? 0,
       }
-      if (bookingsRes?.data) setBookings(extractData(bookingsRes));
-      if (paymentsRes?.data) setPayments(extractData(paymentsRes));
-      if (refundsRes?.data) setRefunds(extractData(refundsRes));
-    };
-    load();
-  }, []);
+    : null;
+  const pendingRefunds = statsData?.pendingRefunds ?? 0;
+  const bookings = bookingsQuery.data ?? EMPTY_BOOKINGS;
+  const payments = paymentsQuery.data ?? EMPTY_PAYMENTS;
+  const refunds = refundsQuery.data ?? [];
 
   const filteredBookings = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -100,6 +112,7 @@ export const AdminReports: React.FC = () => {
 
   const activeRows = tab === 'bookings' ? filteredBookings : filteredPayments;
   const { page, setPage, totalPages, pageItems, total, pageSize } = usePagination<Booking | Payment>(activeRows, 8);
+  const rowsLoading = tab === 'bookings' ? bookingsQuery.isPending : paymentsQuery.isPending;
 
   const snapshot = useMemo(() => {
     const revenueByDay: Record<string, number> = {};
@@ -162,10 +175,10 @@ export const AdminReports: React.FC = () => {
   };
 
   const summaryCards = [
-    { label: 'Total Bookings', value: Number(stats?.totalBookings ?? bookings.length).toLocaleString(), icon: Calendar, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Total Revenue', value: money(stats?.totalRevenue ?? 0), icon: DollarSign, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Transactions', value: payments.length.toLocaleString(), icon: CreditCard, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Pending Refunds', value: (pendingRefunds || refunds.filter(r => r.status === 'PENDING').length).toLocaleString(), icon: RefreshCcw, color: 'text-teal-600 bg-teal-50' },
+    { label: 'Total Bookings', pending: statsQuery.isPending && bookingsQuery.isPending, value: Number(stats?.totalBookings ?? bookings.length).toLocaleString(), icon: Calendar, color: 'text-teal-600 bg-teal-50' },
+    { label: 'Total Revenue', pending: statsQuery.isPending, value: money(stats?.totalRevenue ?? 0), icon: DollarSign, color: 'text-teal-600 bg-teal-50' },
+    { label: 'Transactions', pending: paymentsQuery.isPending, value: payments.length.toLocaleString(), icon: CreditCard, color: 'text-teal-600 bg-teal-50' },
+    { label: 'Pending Refunds', pending: statsQuery.isPending && refundsQuery.isPending, value: (pendingRefunds || refunds.filter(r => r.status === 'PENDING').length).toLocaleString(), icon: RefreshCcw, color: 'text-teal-600 bg-teal-50' },
   ];
 
   return (
@@ -182,7 +195,11 @@ export const AdminReports: React.FC = () => {
             <div key={idx} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
               <div>
                 <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{card.label}</span>
-                <h3 className="text-2xl font-extrabold text-gray-900 mt-1">{card.value}</h3>
+                {card.pending ? (
+                  <Skeleton className="h-8 w-24 mt-1" />
+                ) : (
+                  <h3 className="text-2xl font-extrabold text-gray-900 mt-1">{card.value}</h3>
+                )}
               </div>
               <div className={`p-4 rounded-2xl ${card.color}`}>
                 <Icon className="w-6 h-6" />
@@ -266,7 +283,9 @@ export const AdminReports: React.FC = () => {
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mb-3">Revenue snapshot · last 7 days</p>
             <div className="h-40 w-full">
-              {payments.length === 0 ? (
+              {paymentsQuery.isPending ? (
+                <Skeleton className="h-full w-full" />
+              ) : payments.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">No payment data yet.</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -413,7 +432,15 @@ export const AdminReports: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-700">
-              {pageItems.length === 0 ? (
+              {rowsLoading ? (
+                <tr>
+                  <td colSpan={6} className="p-5">
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map(n => <Skeleton key={n} className="h-10 w-full" />)}
+                    </div>
+                  </td>
+                </tr>
+              ) : pageItems.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-10 text-center text-gray-400">No records match the current filters.</td>
                 </tr>

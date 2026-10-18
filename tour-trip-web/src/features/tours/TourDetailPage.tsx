@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, Clock, Users, Star, CheckCircle, XCircle, ShieldCheck, ArrowLeft, X, ZoomIn, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Users, Star, CheckCircle, XCircle, ShieldCheck, ArrowLeft, X, ZoomIn } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import type { Tour, TourSchedule, Review } from '../../types';
 import { getTourDestination, getTourCategory } from '../../types';
 import { apiClient, API_URL } from '../../api/client';
 import { getToken } from '../../api/authStorage';
 import { getTourImageUrl } from '../../api/utils';
+import { Skeleton, SkeletonRows } from '../../components/Skeleton';
 import { toast } from 'sonner';
+
+const EMPTY_SCHEDULES: TourSchedule[] = [];
 
 export const TourDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,10 +18,6 @@ export const TourDetailPage: React.FC = () => {
   const location = useLocation();
   const tourId = Number(id);
 
-  const [tour, setTour] = useState<Tour | null>(null);
-  const [schedules, setSchedules] = useState<TourSchedule[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'itinerary' | 'included' | 'excluded' | 'reviews'>('itinerary');
 
   const [selectedScheduleId, setSelectedScheduleId] = useState<number>(0);
@@ -25,41 +25,40 @@ export const TourDetailPage: React.FC = () => {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchTourData = async () => {
-      setLoading(true);
-      try {
-        const [tourRes, schedRes, revRes] = await Promise.all([
-          apiClient.get(`/api/v1/tours/${tourId}`).catch(() => null),
-          apiClient.get(`/api/v1/tours/${tourId}/schedules`).catch(() => null),
-          apiClient.get(`/api/v1/tours/${tourId}/reviews`).catch(() => null),
-        ]);
-
-        if (tourRes?.data) {
-          const tourData = tourRes.data;
-          if (tourData.images && Array.isArray(tourData.images)) {
-            tourData.images = tourData.images.map((img: any) => {
-              const url = typeof img === 'string' ? img : (img?.imageUrl || img?.url || '');
-              return url.startsWith('http') ? url : (url ? `${API_URL}${url}` : '');
-            });
-          }
-          setTour(tourData);
-        }
-        if (schedRes?.data && Array.isArray(schedRes.data)) {
-          setSchedules(schedRes.data);
-          if (schedRes.data[0]) setSelectedScheduleId(schedRes.data[0].id);
-        }
-        if (revRes?.data && Array.isArray(revRes.data)) {
-          setReviews(revRes.data);
-        }
-      } catch (err) {
-        toast.error('Failed to load tour details');
-      } finally {
-        setLoading(false);
+  const tourQuery = useQuery({
+    queryKey: ['tour', tourId],
+    enabled: !!tourId,
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/api/v1/tours/${tourId}`);
+      const tourData = data;
+      if (tourData.images && Array.isArray(tourData.images)) {
+        tourData.images = tourData.images.map((img: string | { imageUrl?: string; url?: string }) => {
+          const url = typeof img === 'string' ? img : (img?.imageUrl || img?.url || '');
+          return url.startsWith('http') ? url : (url ? `${API_URL}${url}` : '');
+        });
       }
-    };
-    fetchTourData();
-  }, [tourId]);
+      return tourData as Tour;
+    },
+  });
+  const schedulesQuery = useQuery({
+    queryKey: ['tour', tourId, 'schedules'],
+    enabled: !!tourId,
+    queryFn: async () => (await apiClient.get(`/api/v1/tours/${tourId}/schedules`)).data,
+    select: (data): TourSchedule[] => (Array.isArray(data) ? data : []),
+  });
+  const reviewsQuery = useQuery({
+    queryKey: ['tour', tourId, 'reviews'],
+    enabled: !!tourId,
+    queryFn: async () => (await apiClient.get(`/api/v1/tours/${tourId}/reviews`)).data,
+    select: (data): Review[] => (Array.isArray(data) ? data : []),
+  });
+
+  const tour = tourQuery.data ?? null;
+  const schedules = schedulesQuery.data ?? EMPTY_SCHEDULES;
+  const reviews = reviewsQuery.data ?? [];
+
+  // Default the booking dropdown to the first schedule, without an effect.
+  const effectiveScheduleId = selectedScheduleId || schedules[0]?.id || 0;
 
   const totalPrice = (tour?.price ?? 0) * guests;
 
@@ -70,17 +69,32 @@ export const TourDetailPage: React.FC = () => {
       navigate('/login', { state: { from: location } });
       return;
     }
-    if (!selectedScheduleId) {
+    if (!effectiveScheduleId) {
       toast.error('No available schedule for this tour yet');
       return;
     }
-    navigate(`/bookings/new?tourId=${tour?.id}&scheduleId=${selectedScheduleId}&guests=${guests}`);
+    navigate(`/bookings/new?tourId=${tour?.id}&scheduleId=${effectiveScheduleId}&guests=${guests}`);
   };
 
-  if (loading) {
+  if (tourQuery.isPending) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-40 flex items-center justify-center text-gray-400 gap-2">
-        <Loader2 className="w-6 h-6 animate-spin" /> Loading tour details...
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-10">
+        <Skeleton className="h-5 w-32" />
+        <div className="space-y-3">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-11 w-3/4" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="md:col-span-2 h-[420px]" />
+          <div className="flex md:flex-col gap-4">
+            <Skeleton className="h-[130px] flex-1 md:w-full" />
+            <Skeleton className="h-[130px] flex-1 md:w-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <Skeleton className="lg:col-span-2 h-64" />
+          <Skeleton className="h-96" />
+        </div>
       </div>
     );
   }
@@ -214,11 +228,11 @@ export const TourDetailPage: React.FC = () => {
                 { key: 'itinerary', label: 'Itinerary' },
                 { key: 'included', label: "What's Included" },
                 { key: 'excluded', label: "What's Excluded" },
-                { key: 'reviews', label: `Reviews (${reviews.length})` },
+                { key: 'reviews', label: reviewsQuery.isPending ? 'Reviews' : `Reviews (${reviews.length})` },
               ].map(tab => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as any)}
+                  onClick={() => setActiveTab(tab.key as 'itinerary' | 'included' | 'excluded' | 'reviews')}
                   className={`px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
                     activeTab === tab.key ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
@@ -257,7 +271,9 @@ export const TourDetailPage: React.FC = () => {
 
               {activeTab === 'reviews' && (
                 <div className="space-y-4">
-                  {reviews.length === 0 ? (
+                  {reviewsQuery.isPending ? (
+                    <SkeletonRows rows={2} />
+                  ) : reviews.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-6">No reviews yet for this tour.</p>
                   ) : (
                     reviews.map(rev => (
@@ -296,13 +312,15 @@ export const TourDetailPage: React.FC = () => {
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Select Date & Schedule</label>
-                {schedules.length === 0 ? (
+                {schedulesQuery.isPending ? (
+                  <Skeleton className="h-12 w-full" />
+                ) : schedules.length === 0 ? (
                   <p className="text-sm text-gray-400 bg-gray-50/50 border border-gray-100 rounded-2xl px-4 py-3">
                     No schedules available yet.
                   </p>
                 ) : (
                   <select
-                    value={selectedScheduleId}
+                    value={effectiveScheduleId}
                     onChange={e => setSelectedScheduleId(Number(e.target.value))}
                     className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-teal-600 focus:border-transparent bg-gray-50/50 cursor-pointer"
                   >

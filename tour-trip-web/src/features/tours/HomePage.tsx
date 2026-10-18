@@ -1,55 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Search, MapPin, Star, Heart, Compass, Clock, ShieldCheck, Headphones, Award, ThumbsUp, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { Tour, Destination, Category } from '../../types';
+import type { Tour, Destination, Category, Review } from '../../types';
 import { getTourDestination } from '../../types';
 import { apiClient } from '../../api/client';
 import { extractData, resolveImageUrl, getTourImageUrl } from '../../api/utils';
+import { Skeleton, SkeletonCard } from '../../components/Skeleton';
 import { toast } from 'sonner';
 
 const CATEGORY_ICONS = ['🏛️', '🏝️', '🌿', '🍜', '⛰️', '🛶', '🐘', '🌅'];
 
+type HomeReview = Review & {
+  userAvatarUrl?: string;
+  avatar?: string;
+  userName?: string;
+  name?: string;
+  tourTitle?: string;
+};
+
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [destinationFilter, setDestinationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<number[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [toursRes, revRes, destRes, catRes] = await Promise.all([
-          apiClient.get('/api/v1/tours').catch(() => null),
-          apiClient.get('/api/v1/reviews').catch(() => null),
-          apiClient.get('/api/v1/destinations').catch(() => null),
-          apiClient.get('/api/v1/categories').catch(() => null),
-        ]);
+  const toursQuery = useQuery({
+    queryKey: ['tours'],
+    queryFn: () => apiClient.get('/api/v1/tours'),
+    select: (res): Tour[] => (Array.isArray(res.data) ? res.data : (res.data?.content ?? [])),
+  });
+  const reviewsQuery = useQuery({
+    queryKey: ['reviews'],
+    queryFn: () => apiClient.get('/api/v1/reviews'),
+    select: (res): HomeReview[] => extractData(res),
+  });
+  const destinationsQuery = useQuery({
+    queryKey: ['destinations'],
+    queryFn: () => apiClient.get('/api/v1/destinations'),
+    select: (res): Destination[] => extractData(res),
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => apiClient.get('/api/v1/categories'),
+    select: (res): Category[] => extractData(res),
+  });
 
-        if (toursRes?.data) {
-          const data = Array.isArray(toursRes.data) ? toursRes.data : (toursRes.data?.content ?? []);
-          setTours(data);
-        }
-        if (revRes?.data) {
-          setReviews(extractData(revRes));
-        }
-        setDestinations(extractData(destRes));
-        setCategories(extractData(catRes));
-      } catch (err) {
-        console.error('Fetch failed', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const tours = toursQuery.data ?? [];
+  const reviews = reviewsQuery.data ?? [];
+  const destinations = destinationsQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -181,7 +183,9 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {popularDestinations.length === 0 ? (
+          {destinationsQuery.isPending || toursQuery.isPending ? (
+            [1, 2, 3, 4].map(n => <Skeleton key={n} className="h-80" />)
+          ) : popularDestinations.length === 0 ? (
             <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
               <p className="text-gray-500">No destinations with tours yet.</p>
             </div>
@@ -232,10 +236,10 @@ export const HomePage: React.FC = () => {
           </Link>
         </div>
 
-        {loading ? (
+        {toursQuery.isPending ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(n => (
-              <div key={n} className="bg-white rounded-3xl h-96 animate-pulse bg-gray-200" />
+              <SkeletonCard key={n} />
             ))}
           </div>
         ) : tours.length === 0 ? (
@@ -314,7 +318,7 @@ export const HomePage: React.FC = () => {
           </div>
         )}
 
-        {!loading && tours.length > 8 && (
+        {!toursQuery.isPending && tours.length > 8 && (
           <div className="text-center mt-12">
             <Link
               to="/tours"
@@ -333,7 +337,9 @@ export const HomePage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Find experiences tailored to your travel style</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {popularCategories.length === 0 ? (
+          {categoriesQuery.isPending || toursQuery.isPending ? (
+            [1, 2, 3, 4].map(n => <Skeleton key={n} className="h-24" />)
+          ) : popularCategories.length === 0 ? (
             <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
               <p className="text-gray-500">No categories with tours yet.</p>
             </div>
@@ -406,7 +412,9 @@ export const HomePage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Real reviews from our global community</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {reviews.length === 0 ? (
+          {reviewsQuery.isPending ? (
+            [1, 2, 3].map(n => <Skeleton key={n} className="h-56" />)
+          ) : reviews.length === 0 ? (
             <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
               <p className="text-gray-500">No reviews yet. Be the first to share your experience!</p>
             </div>

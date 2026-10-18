@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DollarSign, Calendar, MapPin, Users, Download, X, TrendingUp, TrendingDown, ChevronRight, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, ReferenceLine,
 } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '../../api/client';
 import { getToken } from '../../api/authStorage';
 import { extractData } from '../../api/utils';
+import { Skeleton } from '../../components/Skeleton';
 import type { DashboardStats, Booking, Payment } from '../../types';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,6 +30,11 @@ const EMPTY_STATS: DashboardStats = {
   totalTours: 0,
   totalUsers: 0,
 };
+
+type StatsPayload = DashboardStats & { pendingRefunds?: number };
+
+const EMPTY_BOOKINGS: Booking[] = [];
+const EMPTY_PAYMENTS: Payment[] = [];
 
 type RangeDays = 7 | 14 | 30;
 
@@ -59,37 +66,37 @@ interface ChartClickState {
 }
 
 export const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
-  const [pendingRefunds, setPendingRefunds] = useState(0);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [range, setRange] = useState<RangeDays>(7);
   const [detailDate, setDetailDate] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [statsRes, bookingsRes, paymentsRes] = await Promise.all([
-          apiClient.get('/api/v1/dashboard/stats').catch(() => null),
-          apiClient.get('/api/v1/bookings').catch(() => null),
-          apiClient.get('/api/v1/payments').catch(() => null),
-        ]);
-        if (statsRes?.data) {
-          setStats({
-            totalRevenue: statsRes.data.totalRevenue ?? 0,
-            totalBookings: statsRes.data.totalBookings ?? 0,
-            totalTours: statsRes.data.totalTours ?? 0,
-            totalUsers: statsRes.data.totalUsers ?? 0,
-          });
-          setPendingRefunds(statsRes.data.pendingRefunds ?? 0);
-        }
-        if (bookingsRes?.data) setBookings(extractData(bookingsRes));
-        if (paymentsRes?.data) setPayments(extractData(paymentsRes));
-      } catch { /* stats endpoint optional — panels fall back to empty values */ }
-    };
-    fetchStats();
-  }, []);
+  const statsQuery = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: async (): Promise<StatsPayload> => (await apiClient.get('/api/v1/dashboard/stats')).data,
+  });
+  const bookingsQuery = useQuery({
+    queryKey: ['bookings'],
+    queryFn: () => apiClient.get('/api/v1/bookings'),
+    select: (res): Booking[] => extractData(res),
+  });
+  const paymentsQuery = useQuery({
+    queryKey: ['payments'],
+    queryFn: () => apiClient.get('/api/v1/payments'),
+    select: (res): Payment[] => extractData(res),
+  });
+
+  const statsData = statsQuery.data;
+  const stats: DashboardStats = statsData
+    ? {
+        totalRevenue: statsData.totalRevenue ?? EMPTY_STATS.totalRevenue,
+        totalBookings: statsData.totalBookings ?? EMPTY_STATS.totalBookings,
+        totalTours: statsData.totalTours ?? EMPTY_STATS.totalTours,
+        totalUsers: statsData.totalUsers ?? EMPTY_STATS.totalUsers,
+      }
+    : EMPTY_STATS;
+  const pendingRefunds = statsData?.pendingRefunds ?? 0;
+  const bookings = bookingsQuery.data ?? EMPTY_BOOKINGS;
+  const payments = paymentsQuery.data ?? EMPTY_PAYMENTS;
 
   const today = useMemo(() => {
     const d = new Date();
@@ -226,10 +233,10 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const statCards = [
-    { label: 'Total Revenue', value: money(stats.totalRevenue), icon: DollarSign, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Total Bookings', value: Number(stats.totalBookings || 0).toLocaleString(), icon: Calendar, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Active Tours', value: Number(stats.totalTours || 0).toLocaleString(), icon: MapPin, color: 'text-teal-600 bg-teal-50' },
-    { label: 'Registered Users', value: Number(stats.totalUsers || 0).toLocaleString(), icon: Users, color: 'text-teal-600 bg-teal-50' },
+    { label: 'Total Revenue', value: money(stats.totalRevenue), icon: DollarSign, color: 'text-teal-600 bg-teal-50', pending: statsQuery.isPending },
+    { label: 'Total Bookings', value: Number(stats.totalBookings || 0).toLocaleString(), icon: Calendar, color: 'text-teal-600 bg-teal-50', pending: statsQuery.isPending },
+    { label: 'Active Tours', value: Number(stats.totalTours || 0).toLocaleString(), icon: MapPin, color: 'text-teal-600 bg-teal-50', pending: statsQuery.isPending },
+    { label: 'Registered Users', value: Number(stats.totalUsers || 0).toLocaleString(), icon: Users, color: 'text-teal-600 bg-teal-50', pending: statsQuery.isPending },
   ];
 
   return (
@@ -267,7 +274,11 @@ export const AdminDashboard: React.FC = () => {
             >
               <div>
                 <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{stat.label}</span>
-                <h3 className="text-3xl font-extrabold text-gray-900 mt-1">{stat.value}</h3>
+                {stat.pending ? (
+                  <Skeleton className="h-8 w-24 mt-1" />
+                ) : (
+                  <h3 className="text-3xl font-extrabold text-gray-900 mt-1">{stat.value}</h3>
+                )}
                 <span className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-bold text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity">
                   View details <ChevronRight className="w-3 h-3" />
                 </span>
@@ -303,7 +314,9 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <div className="h-80 w-full">
-            {payments.length === 0 ? (
+            {paymentsQuery.isPending ? (
+              <Skeleton className="h-full w-full" />
+            ) : payments.length === 0 ? (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">No payment data available yet.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -365,7 +378,9 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs text-gray-400 mt-0.5">All-time distribution across {stats.totalBookings || 0} bookings</p>
           </div>
           <div className="h-64 w-full flex items-center justify-center">
-            {statusDonutData.length === 0 ? (
+            {bookingsQuery.isPending ? (
+              <Skeleton className="h-48 w-48 rounded-full" />
+            ) : statusDonutData.length === 0 ? (
               <div className="text-gray-400 text-sm">No bookings yet.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -438,7 +453,11 @@ export const AdminDashboard: React.FC = () => {
                       <Icon className="w-5 h-5" />
                     </div>
                     <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">{stat.label}</p>
-                    <p className="text-xl font-extrabold text-gray-900 mt-0.5">{stat.value}</p>
+                    {stat.pending ? (
+                      <Skeleton className="h-6 w-16 mt-0.5" />
+                    ) : (
+                      <p className="text-xl font-extrabold text-gray-900 mt-0.5">{stat.value}</p>
+                    )}
                   </div>
                 );
               })}

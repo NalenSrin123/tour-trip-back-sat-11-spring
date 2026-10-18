@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, CheckCircle2, CreditCard, QrCode, Star, Banknote } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import type { Booking, Tour, PaymentMethod, Refund } from '../../types';
 import { apiClient } from '../../api/client';
 import { extractData } from '../../api/utils';
+import { Skeleton } from '../../components/Skeleton';
 import { toast } from 'sonner';
 
 export const BookingCheckout: React.FC = () => {
@@ -54,8 +56,9 @@ export const BookingCheckout: React.FC = () => {
           : 'Booking confirmed and payment received!'
       );
       setStep(4); // Done
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Booking failed. Please try again.');
+    } catch (error: unknown) {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message || 'Booking failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -270,38 +273,35 @@ export const BookingCheckout: React.FC = () => {
 
 export const MyBookings: React.FC = () => {
   const [tab, setTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [refundsByBooking, setRefundsByBooking] = useState<Record<number, Refund>>({});
-  const [loading, setLoading] = useState(true);
+  const [refundOverrides, setRefundOverrides] = useState<Record<number, Refund>>({});
   const [refundModalBookingId, setRefundModalBookingId] = useState<number | null>(null);
   const [refundReason, setRefundReason] = useState('');
   const [reviewModalBookingId, setReviewModalBookingId] = useState<number | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        const [bookingsRes, refundsRes] = await Promise.all([
-          apiClient.get('/api/v1/bookings/my-bookings'),
-          apiClient.get('/api/v1/refunds/my-refunds').catch(() => null),
-        ]);
-        setBookings(extractData(bookingsRes));
+  const bookingsQuery = useQuery({
+    queryKey: ['my-bookings'],
+    queryFn: () => apiClient.get('/api/v1/bookings/my-bookings'),
+    select: (res): Booking[] => extractData(res),
+  });
+  const refundsQuery = useQuery({
+    queryKey: ['my-refunds'],
+    queryFn: () => apiClient.get('/api/v1/refunds/my-refunds'),
+    select: (res): Refund[] => extractData(res),
+  });
 
-        const map: Record<number, Refund> = {};
-        (extractData(refundsRes) as Refund[]).forEach(r => {
-          if (r.bookingId != null) map[r.bookingId] = r;
-        });
-        setRefundsByBooking(map);
-      } catch (err) {
-        toast.error('Failed to load your bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBookings();
-  }, []);
+  const bookings = bookingsQuery.data ?? [];
+  const loading = bookingsQuery.isPending;
+
+  // Refunds load independently of bookings, so badges fill in as they arrive.
+  const refundsByBooking = useMemo(() => {
+    const map: Record<number, Refund> = {};
+    (refundsQuery.data ?? []).forEach(r => {
+      if (r.bookingId != null) map[r.bookingId] = r;
+    });
+    return { ...map, ...refundOverrides };
+  }, [refundsQuery.data, refundOverrides]);
 
   const visibleBookings = bookings.filter(b => {
     if (tab === 'Cancelled') return b.status === 'CANCELLED';
@@ -324,11 +324,12 @@ export const MyBookings: React.FC = () => {
       });
       const created: Refund = res.data;
       if (created?.bookingId != null) {
-        setRefundsByBooking(prev => ({ ...prev, [created.bookingId as number]: created }));
+        setRefundOverrides(prev => ({ ...prev, [created.bookingId as number]: created }));
       }
       toast.success('Refund request submitted successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit refund request');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message || 'Failed to submit refund request');
     }
     setRefundModalBookingId(null);
     setRefundReason('');
@@ -339,8 +340,9 @@ export const MyBookings: React.FC = () => {
     try {
       await apiClient.post('/api/v1/reviews', { bookingId: reviewModalBookingId, rating, comment });
       toast.success('Review submitted successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(message || 'Failed to submit review');
     }
     setReviewModalBookingId(null);
     setComment('');
@@ -370,7 +372,9 @@ export const MyBookings: React.FC = () => {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm text-gray-400">Loading your bookings...</div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(n => <Skeleton key={n} className="h-32 w-full rounded-2xl" />)}
+          </div>
         ) : visibleBookings.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-800">No {tab.toLowerCase()} bookings</h3>

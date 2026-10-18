@@ -1,56 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Compass, Clock, Star, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import type { Destination, Tour } from '../../types';
 import { apiClient } from '../../api/client';
 import { extractData, resolveImageUrl } from '../../api/utils';
+import { Skeleton, SkeletonCard } from '../../components/Skeleton';
 
 export const DestinationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [destination, setDestination] = useState<Destination | null>(null);
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDestinationData = async () => {
-      try {
-        setLoading(true);
-        const [destRes, toursRes] = await Promise.all([
-          apiClient.get(`/api/v1/destinations/${id}`).catch(() => null),
-          apiClient.get('/api/v1/tours').catch(() => null),
-        ]);
+  const destQuery = useQuery({
+    queryKey: ['destination', id],
+    enabled: !!id,
+    queryFn: async () => (await apiClient.get(`/api/v1/destinations/${id}`)).data,
+  });
+  const toursQuery = useQuery({
+    queryKey: ['tours'],
+    queryFn: () => apiClient.get('/api/v1/tours'),
+    select: (res): Tour[] => extractData(res),
+  });
 
-        let destName = '';
-        if (destRes?.data) {
-          setDestination(destRes.data);
-          destName = destRes.data.name || '';
-        }
+  const destination = (destQuery.data ?? null) as Destination | null;
 
-        const allTours = extractData(toursRes);
-        const destIdNum = Number(id);
-        const filtered = allTours.filter((tour: Tour) =>
-          tour.destinationId === destIdNum ||
-          tour.destination?.id === destIdNum ||
-          (destName && (tour.destinationName || tour.destination?.name || '').toLowerCase() === destName.toLowerCase())
-        );
-        setTours(filtered);
-      } catch (err) {
-        console.error('Failed to load destination details', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) {
-      fetchDestinationData();
-    }
-  }, [id]);
+  const tours = useMemo(() => {
+    if (destQuery.isPending || toursQuery.isPending) return [];
+    const allTours = toursQuery.data ?? [];
+    const destIdNum = Number(id);
+    const destName = destination?.name || '';
+    return allTours.filter((tour: Tour) =>
+      tour.destinationId === destIdNum ||
+      tour.destination?.id === destIdNum ||
+      (destName && (tour.destinationName || tour.destination?.name || '').toLowerCase() === destName.toLowerCase())
+    );
+  }, [destQuery.isPending, toursQuery.isPending, toursQuery.data, destination, id]);
 
-  if (loading) {
+  if (destQuery.isPending) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-32 text-center">
-        <div className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500 text-sm">Loading destination details...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-16">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-[400px] w-full rounded-3xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[1, 2, 3].map(n => <SkeletonCard key={n} />)}
+        </div>
       </div>
     );
   }
@@ -129,7 +122,11 @@ export const DestinationDetailPage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Discover curated experiences available in this destination</p>
         </div>
 
-        {tours.length === 0 ? (
+        {toursQuery.isPending ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map(n => <SkeletonCard key={n} />)}
+          </div>
+        ) : tours.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
             <Compass className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-800">No tours available</h3>
