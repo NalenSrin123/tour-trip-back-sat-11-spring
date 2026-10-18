@@ -93,6 +93,13 @@
 
 		</dependency>
 
+		<!-- Cloudinary for persistent cloud image storage -->
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
 		<!-- Database Driver (PostgreSQL) -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
