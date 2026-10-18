@@ -1,0 +1,245 @@
+Responsiveness Audit (Public/Client Pages) - READ ONLY
+
+Date: 2026-10-18
+Files Audited: 12 files (public/client-facing)
+
+
+=== 1) PublicLayout.tsx ===
+
+File: src/layouts/PublicLayout.tsx (297 lines)
+
+Lines: Header behavior (81-208), Mobile menu (200-234), Footer (242-283)
+
+Exact observations by 360-390px widths (common mobile)
+
+- Header container: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between (L81). At 360-390px: px-4 gives 16px padding on sides; sm:px-6 doesn't kick in until sm (640px) — OK for small phones.
+
+- Logo + actions spacing: flex with gap-2 on logo (L82), gap-4 on right actions (L102). Mobile menu button md:hidden (L201-207). Desktop nav hidden on < md (L88). Right action group hidden on < md (L102) — so on 360-390px only logo + hamburger visible. Spacing is adequate.
+
+- Desktop links hidden on mobile: L88 uses hidden md:flex — YES. All nav links (Home/Tours/Destinations/About/Contact + Admin Portal conditional) hidden < md.
+
+- Right actions hidden on mobile: L102 hidden md:flex — includes ThemeToggle (L103-106), notifications (L108-114), user dropdown (L116-177), or Sign In/Up (L179-197). ThemeToggle appears in mobile menu at L219 — that’s good.
+
+- Auth buttons on mobile: mobile menu shows Sign In/Sign Up side-by-side in div with lex flex-gap gap-3 (L227) and w-1/2 each (L228-229). Note lex-gap is non-standard in Tailwind v3; in Tailwind v4 gap-* on flex container is fine — lex-gap is likely a typo/unused class (should be just lex gap-3). Also buttons use w-1/2 which can be tight on very small screens but OK for 360-390px.
+
+- Mobile menu coverage: menu is md:hidden absolute top-full left-0 right-0 ... (L210-233) — drops below header, full width, vertical stack. Covers all nav links (L212-216). Includes ThemeToggle (L217-221), auth-specific items (L221-231). Does it cover 'all nav links' that exist in desktop? Yes (Home/Tours/Destinations/About/Contact). Admin Portal link missing from mobile menu (desktop has it at L94-99 when user.role===ADMIN). This is an omission.
+
+- Mobile menu closes on route change: Links call onClick={() => setMobileMenuOpen(false)} (L212-216,223,228-229). However there is no useEffect watching location.pathname to auto-close menu on navigation (no such effect present). Closing via link click works for in-app Link clicks; programmatic navigation or some cases still rely on click — but better to close on route change. Currently NOT auto-closing on route change via effect.
+
+- Mobile menu has backdrop/overlay? No backdrop element. Menu is positioned below header (absolute top-full) — no overlay div behind it; content below can still be interacted with visually but menu is on top (z-50 header). No overflow-hidden on body when open. Also menu does not scroll internally if very long (no max-h, overflow-y-auto).
+
+- Mobile menu scroll behavior: py-4 px-6 space-y-4 (L211) — no max-height or overflow-y-auto; on small viewports with logged-in state it could grow but usually fine. No body scroll lock.
+
+- Footer responsiveness: grid grid-cols-1 md:grid-cols-4 gap-10 (L244). On mobile stacks to 1 col; padding px-4 sm:px-6 lg:px-8 (L244,280). Margin mt-20 (L243). Looks OK. Text wraps naturally. No horizontal overflow obvious.
+
+- Elements hidden on mobile: Desktop-only groups use hidden md:flex (nav L88, right actions L102). ThemeToggle present in mobile menu. Search bar in Home (L118-164) is inside md:flex-row form — stacks to column on mobile (good). No other major hidden elements except admin-only links.
+
+- Severity notes: Minor issues — missing Admin link in mobile menu; no route-change auto-close; no backdrop/body scroll lock; lex-gap typo (non-standard) at L227; mobile menu doesn’t close on programmatic navigation via location change.
+
+
+Suggested Tailwind fixes (PublicLayout):
+- Add effect: useEffect(() => setMobileMenuOpen(false), [location.pathname]) to auto-close on route change.
+- Add backdrop + body scroll lock when open (e.g. fixed overlay behind menu, overflow-hidden on body).
+- Make mobile menu scrollable: max-h-[calc(100vh-4rem)] overflow-y-auto on the dropdown.
+- Include Admin Portal in mobile menu when user.role==='ADMIN'.
+- Replace lex flex-gap gap-3 with lex gap-3 (L227).
+
+
+=== 2) Per-page issues ===
+
+
+2a) HomePage.tsx (451 lines)
+
+- Hero (L95-166): h-[650px] fixed height. On 360-390px this is tall; content is centered (lex items-center justify-center). Text sizes: 	ext-4xl sm:text-6xl (L110) — OK responsive. mt-12 (L105). Search form stacks on mobile via lex flex-col md:flex-row (L120) — good. Internal divs use w-full md:w-52 and borders adjust per breakpoint (L122,132,145). No horizontal overflow.
+
+- Grids: Destinations grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 (L183) — has breakpoints. Featured Tours same (L236,248). Categories same (L335). Reviews grid-cols-1 md:grid-cols-3 (L408). Good.
+
+- Images: object-cover with h-full/w-full (L203,264) — responsive. Cards have fixed heights like h-80 (dest L201), h-56 (tour image L263), h-96 skeleton (L238). Heights are reasonable; on small screens still OK.
+
+- Why Choose Us (L369-400): p-12 lg:p-16 padding — 48px mobile, 64px lg. Section has ounded-3xl. Grid grid-cols-1 md:grid-cols-4 (L380). Text sizes responsive (	ext-3xl sm:text-4xl L376). OK.
+
+- Horizontal overflow risks: No tables. Long unbroken strings unlikely. Cards use max-w-* and w-full. No overflow-x-auto needed. Good.
+
+- Buttons/text: 'View all' links hidden on xs via hidden sm:inline-flex (L176-181,228-233) — good (prevents crowding). Action buttons wrap naturally.
+
+- Issues found: Hero fixed h-[650px] (L95) — can feel cramped on very small 360px (especially with search form). Text-6xl on mobile (L110) is large but paired with sm:text-6xl — responsive; OK. No horizontal overflow. No missing grid breakpoints.
+
+Suggested fixes: Consider min-h-[85vh] md:h-[650px] or responsive height for hero (cosmetic).
+
+
+2b) TourListPage.tsx (263 lines)
+
+- Filters: grid grid-cols-1 md:grid-cols-4 gap-4 (L79) — stacks on mobile (good). Inputs/selects full width. Range slider wraps fine.
+
+- Active filters: lex flex-wrap gap-2 (L136) — good.
+
+- Tour grid: grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 (L164,176) — proper breakpoints. Cards use flex-col, full height.
+
+- Images: h-60 (L190). Responsive. No horizontal overflow.
+
+- Pagination: flex with gap-2, buttons w-10 h-10 (L246-259) — small but OK on mobile; wrap not needed for small counts.
+
+- Issues: None obvious. Already well responsive.
+
+
+2c) TourDetailPage.tsx (352 lines)
+
+- Title: 	ext-3xl sm:text-5xl (L123) — responsive.
+
+- Gallery: grid grid-cols-1 md:grid-cols-3 gap-4 (L127). Main image md:col-span-2 h-[420px] (L128). Thumbnails in lex md:flex-col gap-4 (L140) — on mobile thumbnails are horizontal row (good). Heights fixed; on small screens 420px can be tight but object-cover handles.
+
+- Lightbox: fixed inset-0 with p-4, image max-w-full max-h-[85vh] (L156-170) — responsive.
+
+- Meta grid: grid grid-cols-2 sm:grid-cols-3 gap-6 (L179) — stacks to 2 cols on xs, 3 on sm+. OK.
+
+- Tabs: lex flex-wrap gap-2 (L212) — wraps on mobile. Good.
+
+- Included/excluded: list items with lex items-center gap-3 and lex-shrink-0 icons (L241-256) — prevents icon/text wrapping oddly.
+
+- Booking card: sticky top-28 (L285) on lg; on mobile it’s in normal flow (grid is 1 col). Padding p-8 (L285) — generous on 360px but readable.
+
+- Itinerary text: whitespace-pre-line (L233) — can be long; container has padding, width constrained. No overflow-x-auto needed.
+
+- Issues: Main image height h-[420px] (L128) fixed; thumbnails horizontal row on mobile can be tight. Also p-8 (L176,211,285) is a bit large on 360px (cosmetic). No horizontal overflow.
+
+Suggested fixes: Consider h-64 sm:h-[420px] for main image; reduce padding on mobile (p-4 sm:p-6 md:p-8) for dense sections.
+
+
+2d) DestinationsPage.tsx (145 lines)
+
+- Grid: grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 (L57) — good breakpoints.
+
+- Cards: h-48 image (L69), flex-col layout. Text uses line-clamp-2 (L87). OK.
+
+- Pagination: buttons with padding, wraps? Not needed. No horizontal scroll.
+
+- Issues: None. Well responsive.
+
+
+2e) DestinationDetailPage.tsx (195 lines)
+
+- Hero/gallery: main image h-[400px] (L79,109). Title 	ext-4xl sm:text-5xl (L90,120). Overlay text stacks.
+
+- Sub-images: grid grid-cols-2 md:grid-cols-4 gap-4 (L95) — good (2 cols on mobile).
+
+- Tours grid: grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 (L139).
+
+- Issues: Fixed heights h-[400px], h-48 (L98), h-56 (L155). Cosmetic. No horizontal overflow.
+
+Suggested fixes: Responsive heights h-64 sm:h-80 md:h-[400px] (minor).
+
+
+2f) AuthPages.tsx (Login/Register/Forgot/Reset) (541 lines)
+
+- Containers: min-h-screen flex items-center justify-center px-4 pt-28 pb-16 (L58,192,353,448). On mobile pt-28 is tall due to fixed header; but centered. OK.
+
+- Card: max-w-md w-full p-8 (L59). Padding p-8 is fine on mobile; form inputs stack vertically (good).
+
+- Forms: all inputs full width, labels above, icons absolute. No side-by-side layouts — good. OTP inputs centered.
+
+- Issues: pt-28 gives extra top padding on mobile (header height) — functional, not broken.
+
+- No horizontal overflow. Already responsive.
+
+
+2g) BookingPages.tsx (BookingCheckout + MyBookings) (540 lines)
+
+- Checkout: max-w-3xl mx-auto px-4 pt-28 pb-12 (L65). Progress indicators (L68-78): flex with justify-between; labels hidden on xs via hidden sm:inline (L75) — good to avoid crowding on mobile.
+
+- Payment methods: grid grid-cols-1 sm:grid-cols-3 gap-4 (L148) — stacks on mobile, 3-cols on sm+. Good.
+
+- Buttons: back/next use w-1/2 in row (L128-142,214-232) — can feel tight on 360px but acceptable. Could use stack on xs.
+
+- MyBookings: header has lex items-center justify-between (L351) but content can wrap? Tabs are in a flex container (L356-369) — on very small screens tabs may wrap; also booking card is lex flex-col md:flex-row (L381). Action buttons lex flex-col sm:flex-row (L421) — stacks on mobile. Good.
+
+- Modals: refund/review modals use ixed inset-0 p-4 with max-w-md w-full (L452-484,489-536) — responsive, no overflow.
+
+- Issues: Button groups using w-1/2 side-by-side on mobile (L129-141,215-233) — could be lex-col sm:flex-row with full width on mobile. Cosmetic.
+
+Suggested fix: Convert back/next and confirm buttons to lex flex-col-reverse sm:flex-row gap-3 with w-full sm:w-1/2 or just lex-1 (improves 360px).
+
+
+2h) AboutPage.tsx (132 lines)
+
+- Hero: 	ext-4xl sm:text-6xl (L38) — responsive.
+
+- Values: grid grid-cols-1 md:grid-cols-3 gap-8 (L49) — good.
+
+- Team: grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 (L101) — good.
+
+- Issues: None. Well responsive.
+
+
+2i) ContactPage.tsx (157 lines)
+
+- Layout: grid grid-cols-1 lg:grid-cols-2 gap-12 (L36). Stacks on mobile.
+
+- Form: name/email in grid grid-cols-1 sm:grid-cols-2 gap-5 (L44) — stacks on xs (good).
+
+- Map placeholder: h-64 (L143). OK.
+
+- Issues: None. Well responsive.
+
+
+=== 3) Pages already well responsive ===
+
+
+- TourListPage.tsx: proper breakpoints (1/2/3), filters stack on mobile, flex-wrap for active filters. No major issues.
+
+- DestinationsPage.tsx: 1/2/4 grid, good spacing. Responsive.
+
+- DestinationDetailPage.tsx: sub-images 2-cols mobile, tours grid responsive, text sizes responsive.
+
+- AuthPages.tsx: single column cards, full-width inputs, no horizontal layouts. Good.
+
+- AboutPage.tsx: responsive grids and text. Good.
+
+- ContactPage.tsx: stacks cleanly, form fields responsive.
+
+- TourDetailPage.tsx: mostly good (minor fixed heights/padding noted).
+
+- HomePage.tsx: search stacks, grids have breakpoints — largely good.
+
+- BookingPages.tsx (MyBookings): responsive layout with flex-col?row transitions. Good.
+
+
+=== 4) Good mobile patterns to reuse ===
+
+
+- Mobile menu pattern (PublicLayout): Hamburger toggle with md:hidden (L201-207), dropdown below header (absolute top-full) — standard; just needs route-change close + backdrop + scroll lock + Admin link (see fixes).
+
+- Responsive grids: grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 used consistently (Home, Destinations, About team). Good pattern to follow.
+
+- Stacking forms: lex flex-col md:flex-row for search (Home L120); form field pairs stack on xs via grid grid-cols-1 sm:grid-cols-2 (Contact L44). Good.
+
+- Wrapping: lex flex-wrap gap-2 for filter chips (TourList L136), tabs (TourDetail L212). Good.
+
+- Responsive text: 	ext-3xl sm:text-5xl, 	ext-4xl sm:text-6xl used in heroes (good).
+
+- Hide on mobile: hidden sm:inline-flex for secondary CTAs (Home L176,228). Prevents crowding.
+
+- Horizontal scroll avoidance: use overflow-x-auto in admin tables (AdminReports L390, AdminReviews L107, AdminSettings L288) — pattern exists if needed for wide content.
+
+- Icon + text layout: lex items-center gap-3 with lex-shrink-0 icons (TourDetail L241-256). Prevents text wrap breaking icon.
+
+
+=== PRIORITIZED FIX LIST (implementation plan) ===
+
+Severity: P0 = unusable on 360-390px (none found), P1 = broken layout, P2 = cosmetic
+
+P1 (PublicLayout):
+- L94-99,210-233: Add Admin Portal link to mobile menu when authenticated as ADMIN.
+- L14-47,210-234: Add useEffect(() => setMobileMenuOpen(false), [location.pathname]) to auto-close on route change.
+- L210-233: Add backdrop overlay + body scroll lock when menu open; make menu scrollable (max-h-[calc(100vh-4rem)] overflow-y-auto).
+- L227: Fix lex flex-gap gap-3 -> lex gap-3 (Tailwind v4).
+
+P2 (cosmetic):
+- Home L95: Hero height h-[650px] -> min-h-[85vh] sm:h-[650px] for better small screens.
+- TourDetail L128: Main image h-[420px] -> h-64 sm:h-80 md:h-[420px] (and thumbnails row spacing fine).
+- TourDetail L176,211,285: Reduce padding on mobile p-4 sm:p-6 md:p-8 where dense.
+- DestinationDetail L79,109: h-[400px] -> h-64 sm:h-80 md:h-[400px].
+- BookingPages L129-141,215-233: Convert w-1/2 button pairs to stack on xs (lex flex-col sm:flex-row gap-3 with full width on mobile).
+- Home L369-400: Why Choose section padding p-12 lg:p-16 fine; could be p-6 sm:p-10 lg:p-16 minor.
+
+No tables missing overflow-x-auto found in public/client pages (admin has examples). No elements with unbreakable long strings causing horizontal scroll observed.
+

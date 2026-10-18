@@ -1,111 +1,120 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@custom-variant dark (&:where(.dark, .dark *));
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+@theme {
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-accent: #f97316;
 }
 
 body {
   margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: #374151;
+  background-color: #f9fafb;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+/*
+ * Dark theme.
+ * These rules are intentionally unlayered: unlayered CSS wins over Tailwind's
+ * `utilities` layer, so a single set of selectors flips the whole app without
+ * having to add `dark:` variants to 30+ files.
+ * Only light-surface utilities are overridden; semantic/status colours and
+ * `text-white` on coloured fills are left untouched.
+ */
+.dark {
+  color-scheme: dark;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+.dark body {
+  color: #e2e8f0;
+  background-color: #0b1220;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+/* --- Surfaces --- */
+.dark .bg-white { background-color: #0f172a; }
+.dark .bg-white\/95 { background-color: rgba(15, 23, 42, 0.95); }
+.dark .bg-white\/80 { background-color: rgba(15, 23, 42, 0.8); }
+.dark .bg-white\/75 { background-color: rgba(15, 23, 42, 0.75); }
+.dark .bg-gray-50 { background-color: #111827; }
+.dark .bg-gray-50\/50 { background-color: rgba(17, 24, 39, 0.5); }
+.dark .bg-gray-50\/75 { background-color: rgba(17, 24, 39, 0.75); }
+.dark .bg-gray-100 { background-color: #1e293b; }
+.dark .bg-gray-200 { background-color: #334155; }
+.dark .bg-gray-900 { background-color: #020617; }
+
+.dark .hover\:bg-gray-50:hover { background-color: #1e293b; }
+.dark .hover\:bg-gray-100:hover { background-color: #334155; }
+.dark .hover\:bg-gray-200:hover { background-color: #475569; }
+.dark .hover\:bg-white:hover { background-color: #1e293b; }
+.dark .group:hover .group-hover\:bg-white { background-color: #1e293b; }
+
+/* --- Text --- */
+.dark .text-gray-900 { color: #f1f5f9; }
+.dark .text-gray-800 { color: #e2e8f0; }
+.dark .text-gray-700 { color: #cbd5e1; }
+.dark .text-gray-600 { color: #94a3b8; }
+.dark .text-gray-500 { color: #94a3b8; }
+.dark .text-gray-400 { color: #64748b; }
+.dark .text-gray-300 { color: #cbd5e1; }
+.dark .text-gray-200 { color: #e2e8f0; }
+.dark .text-gray-100 { color: #f1f5f9; }
+
+/* --- Borders & dividers --- */
+.dark .border-gray-100 { border-color: #1e293b; }
+.dark .border-gray-200 { border-color: #334155; }
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }
+.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }
+.dark .divide-white\/10 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(148, 163, 184, 0.16); }
+
+/* --- Brand (teal) needs a lighter step on dark surfaces for contrast --- */
+.dark .text-teal-600 { color: #2dd4bf; }
+.dark .text-teal-700 { color: #5eead4; }
+.dark .hover\:text-teal-600:hover { color: #2dd4bf; }
+.dark .border-teal-600 { border-color: #2dd4bf; }
+.dark .hover\:bg-teal-50:hover { background-color: rgba(20, 184, 166, 0.16); }
+.dark .hover\:bg-teal-100:hover { background-color: rgba(20, 184, 166, 0.24); }
+
+/* --- Status chips stay legible on dark --- */
+.dark .bg-teal-50 { background-color: rgba(20, 184, 166, 0.16); }
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.16); }
+.dark .text-emerald-700 { color: #6ee7b7; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.16); }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.16); }
+.dark .text-orange-700 { color: #fdba74; }
+.dark .hover\:bg-orange-50:hover { background-color: rgba(249, 115, 22, 0.16); }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.16); }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.16); }
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.16); }
+.dark .text-blue-700 { color: #93c5fd; }
+.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.16); }
+.dark .text-purple-700 { color: #d8b4fe; }
+.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.16); }
+.dark .text-indigo-700 { color: #a5b4fc; }
+
+/* --- Form controls --- */
+.dark input::placeholder,
+.dark textarea::placeholder { color: #64748b; }
+.dark select option { background-color: #0f172a; color: #e2e8f0; }
+.dark input[type='checkbox'],
+.dark input[type='radio'] { accent-color: #14b8a6; }
+
+/* --- Hide scrollbars while keeping scroll behaviour --- */
+.no-scrollbar {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* legacy Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari / Edge */
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+/* --- Shadows read as too heavy on dark; soften them --- */
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4); }
+.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45); }
+.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5); }
+.dark .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); }
