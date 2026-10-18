@@ -1,14 +1,12 @@
 services:
   - type: web
     name: tour-trip-api
-    runtime: java
+    runtime: docker
     plan: free
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -XX:MaxRAMPercentage=75.0 -jar target/tour-trip-api-*.jar
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/v1/categories
     envVars:
-      - key: JAVA_VERSION
-        value: "21"
       - key: DB_URL
         sync: false
       - key: DB_USERNAME
