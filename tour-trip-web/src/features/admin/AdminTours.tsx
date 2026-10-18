@@ -256,7 +256,7 @@ export const AdminTours: React.FC = () => {
                 <td className="p-5 font-mono font-bold">#{t.id}</td>
                 <td className="p-5">
                   <div className="flex items-center gap-2">
-                    <img src={getTourImageUrl(t)} alt={t.title} className="w-16 h-12 rounded-xl object-cover border border-gray-200 bg-gray-100" />
+                      <img src={getTourImageUrl(t)} alt={t.title} loading="lazy" decoding="async" className="w-16 h-12 rounded-xl object-cover border border-gray-200 bg-gray-100" />
                     {Array.isArray(t.images) && t.images.length > 1 && (
                       <span className="px-2 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold">{t.images.length}</span>
                     )}
@@ -468,7 +468,7 @@ export const AdminTours: React.FC = () => {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3 max-h-40 overflow-y-auto">
                   {tourImages.map((img, idx) => (
                     <div key={idx} className="relative group rounded-2xl overflow-hidden border border-gray-200 h-24 bg-gray-50">
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                        <img src={img.url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}

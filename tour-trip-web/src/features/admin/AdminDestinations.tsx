@@ -20,22 +20,21 @@ export const AdminDestinations: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/destinations');
+        setDestinations(extractData(res));
+      } catch {
+        toast.error('Failed to load destinations');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchDestinations();
-  }, []);
-
-  const fetchDestinations = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/api/v1/destinations');
-      setDestinations(extractData(res));
-    } catch (err) {
-      toast.error('Failed to load destinations');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [reloadKey]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -93,8 +92,8 @@ export const AdminDestinations: React.FC = () => {
       await apiClient.delete(`/api/v1/destinations/${id}`);
       setDestinations(prev => prev.filter(d => d.id !== id));
       toast.success('Destination deleted successfully');
-    } catch (err: any) {
-      toast.error('Failed to delete destination: ' + (err?.response?.data?.message || err?.message || 'Server error'));
+    } catch (err: unknown) {
+      toast.error('Failed to delete destination: ' + ((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'Server error'));
     }
   };
 
@@ -119,10 +118,10 @@ export const AdminDestinations: React.FC = () => {
         });
         toast.success('Destination created successfully');
       }
-      await fetchDestinations();
+      setReloadKey(k => k + 1);
       setModalOpen(false);
-    } catch (err: any) {
-      toast.error('Failed to save destination: ' + (err?.response?.data?.message || err?.message || 'Server error'));
+    } catch (err: unknown) {
+      toast.error('Failed to save destination: ' + ((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'Server error'));
     }
   };
 
@@ -167,7 +166,7 @@ export const AdminDestinations: React.FC = () => {
                 <tr key={d.id}>
                   <td className="p-5">
                     <div className="flex items-center gap-2">
-                      <img src={resolveImageUrl(d.imageUrl || d.images?.[0] || d.image)} alt={d.name} className="w-16 h-12 rounded-xl object-cover border border-gray-200 bg-gray-100" />
+                      <img src={resolveImageUrl(d.imageUrl || d.images?.[0] || d.image)} alt={d.name} loading="lazy" decoding="async" className="w-16 h-12 rounded-xl object-cover border border-gray-200 bg-gray-100" />
                       {d.images && d.images.length > 1 && (
                         <span className="px-2 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold">{d.images.length}</span>
                       )}
@@ -238,7 +237,7 @@ export const AdminDestinations: React.FC = () => {
                   <div className="flex flex-wrap gap-2 mb-3">
                     {existingImages.map((img, idx) => (
                       <div key={`${img}-${idx}`} className="relative group w-16 h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
-                        <img src={resolveImageUrl(img)} alt={`existing ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={resolveImageUrl(img)} alt={`existing ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => handleRemoveExisting(img)}
@@ -256,7 +255,7 @@ export const AdminDestinations: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       {imagePreviews.map((src, idx) => (
                         <div key={`new-${idx}`} className="relative group w-16 h-12 rounded-xl overflow-hidden border border-teal-200 bg-gray-100">
-                          <img src={src} alt={`new ${idx + 1}`} className="w-full h-full object-cover" />
+                          <img src={src} alt={`new ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => handleRemoveNew(idx)}

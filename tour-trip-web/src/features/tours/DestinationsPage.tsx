@@ -18,7 +18,7 @@ export const DestinationsPage: React.FC = () => {
       try {
         const res = await apiClient.get('/api/v1/destinations');
         setDestinations(extractData(res));
-      } catch (err) {
+      } catch {
         console.error('Failed to load destinations');
       } finally {
         setLoading(false);
@@ -70,6 +70,8 @@ export const DestinationsPage: React.FC = () => {
                     <img
                       src={resolveImageUrl(coverImage(dest))}
                       alt={dest.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute bottom-4 left-4 px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1">

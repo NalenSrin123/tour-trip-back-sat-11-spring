@@ -5,8 +5,16 @@ import { apiClient } from '../../api/client';
 import { extractData, resolveImageUrl } from '../../api/utils';
 import { useState, useEffect } from 'react';
 
+interface Guide {
+  id?: number;
+  fullName?: string;
+  name?: string;
+  avatarUrl?: string;
+  role?: string;
+}
+
 export const AboutPage: React.FC = () => {
-  const [guides, setGuides] = useState<any[]>([]);
+  const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,9 +23,9 @@ export const AboutPage: React.FC = () => {
         // Fetching users. In a real app, you might have a /api/v1/users/guides endpoint
         const res = await apiClient.get('/api/v1/users');
         const allUsers = extractData(res);
-        const filteredGuides = allUsers.filter((u: any) => u.role === 'GUIDE');
+        const filteredGuides = allUsers.filter((u: Guide) => u.role === 'GUIDE');
         setGuides(filteredGuides);
-      } catch (err) {
+      } catch {
         console.error('Failed to load guides');
       } finally {
         setLoading(false);
@@ -112,6 +120,8 @@ export const AboutPage: React.FC = () => {
                   <img
                     src={resolveImageUrl(guide.avatarUrl)}
                     alt={guide.fullName}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-110 transition-transform"
                   />
                   <div className="absolute -bottom-1 -right-1 bg-teal-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">

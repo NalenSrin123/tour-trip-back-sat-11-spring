@@ -91,6 +91,8 @@ export const DestinationDetailPage: React.FC = () => {
                   <img
                     src={resolveImageUrl(img)}
                     alt={`${destination.name} ${idx + 2}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
@@ -153,6 +155,8 @@ export const DestinationDetailPage: React.FC = () => {
                       <img
                         src={resolveImageUrl(imageUrl)}
                         alt={tour.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>

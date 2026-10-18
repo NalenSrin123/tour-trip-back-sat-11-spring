@@ -160,7 +160,7 @@ export const TourDetailPage: React.FC = () => {
                 activeImageIdx === idx ? 'border-teal-600 ring-4 ring-teal-600/20' : 'border-transparent opacity-75 hover:opacity-100'
               }`}
             >
-              <img src={getTourImageUrl({ images: [img] })} alt="" className="w-full h-full object-cover" />
+              <img src={getTourImageUrl({ images: [img] })} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
@@ -178,6 +178,8 @@ export const TourDetailPage: React.FC = () => {
           <img
             src={getTourImageUrl(tour, activeImageIdx)}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
           />
         </div>

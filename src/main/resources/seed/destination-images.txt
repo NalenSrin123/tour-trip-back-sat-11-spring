@@ -18,7 +18,7 @@ Bokor Mountain|/api/v1/files/seed-bokor-mountain-1.jpg|/api/v1/files/seed-bokor-
 Otres Beach|/api/v1/files/seed-otres-beach-1.jpg|/api/v1/files/seed-otres-beach-2.jpg|/api/v1/files/seed-otres-beach-3.jpg
 Angkor Thom|/api/v1/files/seed-angkor-thom-1.jpg|/api/v1/files/seed-angkor-thom-2.jpg|/api/v1/files/seed-angkor-thom-3.jpg|/api/v1/files/seed-angkor-thom-4.jpg
 Ta Prohm|/api/v1/files/seed-ta-prohm-1.jpg|/api/v1/files/seed-ta-prohm-2.jpg|/api/v1/files/seed-ta-prohm-3.jpg
-Cardamom Mountains|/api/v1/files/seed-cardamom-mountains-1.jpg|/api/v1/files/seed-cardamom-mountains-2.png|/api/v1/files/seed-cardamom-mountains-3.png
-Koh Kong|/api/v1/files/seed-koh-kong-1.png|/api/v1/files/seed-koh-kong-2.png
+Cardamom Mountains|/api/v1/files/seed-cardamom-mountains-1.jpg|/api/v1/files/seed-cardamom-mountains-2.jpg|/api/v1/files/seed-cardamom-mountains-3.jpg
+Koh Kong|/api/v1/files/seed-koh-kong-1.jpg|/api/v1/files/seed-koh-kong-2.jpg
 Siem Reap|/api/v1/files/seed-siem-reap-1.jpg|/api/v1/files/seed-siem-reap-2.jpg|/api/v1/files/seed-siem-reap-3.jpg|/api/v1/files/seed-siem-reap-4.jpg|/api/v1/files/seed-siem-reap-5.jpg
 Kampot|/api/v1/files/seed-kampot-1.jpg|/api/v1/files/seed-kampot-2.jpg|/api/v1/files/seed-kampot-3.jpg|/api/v1/files/seed-kampot-4.jpg

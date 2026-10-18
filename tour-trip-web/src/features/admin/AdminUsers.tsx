@@ -103,7 +103,7 @@ export const AdminUsers: React.FC = () => {
                   <td className="p-5">
                     <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-100">
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt={u.fullName} className="w-full h-full object-cover" />
+                        <img src={avatarUrl} alt={u.fullName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold uppercase">
                           {u.fullName?.[0] || u.name?.[0] || 'U'}

@@ -47,7 +47,7 @@ export const AdminTourImages: React.FC = () => {
                       const finalUrl = url.startsWith('http') ? url : (url ? `${API_URL}${url}` : '');
                       return (
                         <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border border-gray-100 bg-gray-100">
-                          <img src={finalUrl} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                          <img src={finalUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                              <button
                               className="p-2 bg-white/20 backdrop-blur-md hover:bg-white/40 text-white rounded-full transition-all"

@@ -204,7 +204,7 @@ export const HomePage: React.FC = () => {
                     to={`/destinations/${dest.id}`}
                     className="relative h-80 rounded-3xl overflow-hidden shadow-md group cursor-pointer block"
                   >
-                    <img src={resolveImageUrl(dest.imageUrl || dest.image)} alt={dest.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <img src={resolveImageUrl(dest.imageUrl || dest.image)} alt={dest.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-white">
                       <h3 className="text-xl font-bold">{dest.name}</h3>
@@ -268,6 +268,8 @@ export const HomePage: React.FC = () => {
                       <img
                         src={getTourImageUrl(tour)}
                         alt={tour.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <button
@@ -438,7 +440,7 @@ export const HomePage: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
                 {(rev.userAvatarUrl || rev.user?.avatarUrl || rev.avatar) ? (
-                  <img src={resolveImageUrl(rev.userAvatarUrl || rev.user?.avatarUrl || rev.avatar)} alt={rev.userName || rev.name || 'Traveler'} className="w-11 h-11 rounded-full object-cover bg-gray-100" />
+                  <img src={resolveImageUrl(rev.userAvatarUrl || rev.user?.avatarUrl || rev.avatar)} alt={rev.userName || rev.name || 'Traveler'} loading="lazy" decoding="async" className="w-11 h-11 rounded-full object-cover bg-gray-100" />
                 ) : (
                   <div className="w-11 h-11 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold">
                     {(rev.userName || rev.name || rev.user?.fullName || 'T').charAt(0).toUpperCase()}
