@@ -2,7 +2,7 @@ package com.etec.tourtripapi.common.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class FileStorageService {
 
     private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
@@ -60,7 +61,11 @@ public class FileStorageService {
         }
 
         if (cloudinary != null) {
-            return storeInCloudinary(file);
+            try {
+                return storeInCloudinary(file);
+            } catch (Exception ex) {
+                log.warn("Cloudinary upload failed ({}); falling back to local disk storage.", ex.getMessage());
+            }
         }
         return storeLocally(file, originalFileName);
     }
