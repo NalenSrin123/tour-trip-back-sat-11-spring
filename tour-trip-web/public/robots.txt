@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Sitemap: https://tour-trip-web.vercel.app/sitemap.xml
