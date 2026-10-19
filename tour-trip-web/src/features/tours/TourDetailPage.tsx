@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Clock, Users, Star, CheckCircle, XCircle, ShieldCheck, ArrowLeft, X, ZoomIn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { Tour, TourSchedule, Review } from '../../types';
@@ -16,7 +16,6 @@ const EMPTY_SCHEDULES: TourSchedule[] = [];
 export const TourDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const tourId = Number(id);
 
   const [activeTab, setActiveTab] = useState<'itinerary' | 'included' | 'excluded' | 'reviews'>('itinerary');
@@ -64,17 +63,19 @@ export const TourDetailPage: React.FC = () => {
   const totalPrice = (tour?.price ?? 0) * guests;
 
   const handleBookNow = () => {
-    const token = getToken();
-    if (!token) {
-      toast.error('Please sign in to book this tour');
-      navigate('/login', { state: { from: location } });
-      return;
-    }
     if (!effectiveScheduleId) {
       toast.error('No available schedule for this tour yet');
       return;
     }
-    navigate(`/bookings/new?tourId=${tour?.id}&scheduleId=${effectiveScheduleId}&guests=${guests}`);
+    // Build the exact checkout URL first so the date/guest selection follows the
+    // user through the sign-in step instead of making them pick everything again.
+    const bookingSearch = `?tourId=${tour?.id}&scheduleId=${effectiveScheduleId}&guests=${guests}`;
+    if (!getToken()) {
+      toast.error('Please sign in to continue your booking');
+      navigate('/login', { state: { from: { pathname: '/bookings/new', search: bookingSearch } } });
+      return;
+    }
+    navigate(`/bookings/new${bookingSearch}`);
   };
 
   if (tourQuery.isPending) {

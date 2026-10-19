@@ -17,6 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -47,7 +48,14 @@ export const Login: React.FC = () => {
         },
       });
       toast.success('Login successful!');
-      navigate(role === 'ADMIN' ? '/admin' : '/');
+      // Return the user to where they were headed (e.g. a pre-filled booking)
+      // instead of always dumping them on the home page.
+      const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+      const fallback = role === 'ADMIN' ? '/admin' : '/';
+      const target = from?.pathname && from.pathname !== '/login'
+        ? `${from.pathname}${from.search ?? ''}`
+        : fallback;
+      navigate(target, { replace: true });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Login failed. Please check credentials.');
@@ -119,7 +127,7 @@ export const Login: React.FC = () => {
 
         <div className="mt-8 text-center text-sm text-gray-500">
           Don't have an account?{' '}
-          <Link to="/register" className="text-teal-600 font-semibold hover:underline">Sign up</Link>
+          <Link to="/register" state={location.state} className="text-teal-600 font-semibold hover:underline">Sign up</Link>
         </div>
       </div>
     </div>
@@ -137,6 +145,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState<'form' | 'otp'>('form');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -181,7 +190,7 @@ export const Register: React.FC = () => {
       setLoading(true);
       await apiClient.post('/api/v1/auth/verify-registration', { email, otp });
       toast.success('Email verified successfully! Please sign in.');
-      navigate('/login');
+      navigate('/login', { state: location.state });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'OTP verification failed.');
@@ -342,7 +351,7 @@ export const Register: React.FC = () => {
 
         <div className="mt-8 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link to="/login" className="text-teal-600 font-semibold hover:underline">Sign in</Link>
+          <Link to="/login" state={location.state} className="text-teal-600 font-semibold hover:underline">Sign in</Link>
         </div>
       </div>
     </div>

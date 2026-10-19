@@ -42,8 +42,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -169,10 +171,25 @@ public class DataSeeder implements CommandLineRunner {
                 destinationRepository.save(dest);
                 created++;
             } else {
-                // Only fill images when the destination has none, so admin edits are preserved.
-                if (dest.getImages() == null || dest.getImages().isEmpty()) {
-                    dest.setImages(new ArrayList<>(imgs));
-                    dest.setImageUrl(imgs.isEmpty() ? null : imgs.get(0));
+                List<String> current = dest.getImages() != null ? new ArrayList<>(dest.getImages()) : new ArrayList<>();
+                List<String> preservedUploads = current.stream()
+                        .filter(u -> u != null && !u.startsWith("/api/v1/files/seed-"))
+                        .collect(Collectors.toList());
+                List<String> currentSeed = current.stream()
+                        .filter(u -> u != null && u.startsWith("/api/v1/files/seed-"))
+                        .collect(Collectors.toList());
+
+                // Fill empty galleries, and self-heal stale seed image URLs (e.g. a seed
+                // file that was persisted as ".png" but no longer ships) without wiping
+                // out admin-uploaded images.
+                boolean empty = current.isEmpty();
+                boolean seedOutOfDate = !currentSeed.isEmpty()
+                        && !new HashSet<>(currentSeed).equals(new HashSet<>(imgs));
+                if (!imgs.isEmpty() && (empty || seedOutOfDate)) {
+                    List<String> rebuilt = new ArrayList<>(imgs);
+                    rebuilt.addAll(preservedUploads);
+                    dest.setImages(rebuilt);
+                    dest.setImageUrl(rebuilt.get(0));
                     destinationRepository.save(dest);
                     updated++;
                 }
