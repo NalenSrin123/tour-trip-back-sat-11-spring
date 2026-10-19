@@ -200,15 +200,15 @@ export const HomePage: React.FC = () => {
               <p className="text-gray-500">No destinations with tours yet.</p>
             </div>
           ) : (
-            popularDestinations.slice(0, 8).map((dest, idx) => {
+            popularDestinations.slice(0, 8).map((dest) => {
               const tourCount = dest.tourCount;
               return (
                 <motion.div
                   key={dest.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ duration: 0.3 }}
                 >
                   <Link
                     to={`/destinations/${dest.id}`}
@@ -260,15 +260,15 @@ export const HomePage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {tours.slice(0, 8).map((tour, idx) => {
+            {tours.slice(0, 8).map((tour) => {
               const isFav = favorites.includes(tour.id);
               return (
                 <motion.div
                   key={tour.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ duration: 0.3 }}
                 >
                   <Link
                     to={`/tours/${tour.id}`}
@@ -361,10 +361,10 @@ export const HomePage: React.FC = () => {
               return (
                 <motion.div
                   key={cat.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ duration: 0.3 }}
                   onClick={() => goToCategory(cat.name)}
                   className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-teal-200 transition-all cursor-pointer flex items-center gap-4 group"
                 >

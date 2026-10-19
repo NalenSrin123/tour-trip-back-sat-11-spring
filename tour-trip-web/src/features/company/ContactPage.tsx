@@ -41,8 +41,8 @@ export const ContactPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Contact Form */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 space-y-6"
         >
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -110,8 +110,8 @@ export const ContactPage: React.FC = () => {
 
         {/* Contact Info & Map */}
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="space-y-8"
         >
           <div className="bg-slate-900 rounded-3xl p-8 text-white space-y-8 shadow-2xl">
