@@ -1,6 +1,7 @@
 import { API_URL } from './client';
 
-export const extractData = (res: any) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const extractData = (res: { data?: any } | null | undefined): any[] => {
   if (!res?.data) return [];
   if (Array.isArray(res.data)) return res.data;
   if (res.data.content && Array.isArray(res.data.content)) return res.data.content;
@@ -26,7 +27,7 @@ export const resolveImageUrl = (url?: string | null): string => {
   return `${API_URL}${url}`;
 };
 
-export const getTourImageUrl = (tour: any, index: number = 0): string => {
+export const getTourImageUrl = (tour: { images?: unknown } | null | undefined, index: number = 0): string => {
   const imgs = tour?.images;
   if (!imgs || !Array.isArray(imgs) || imgs.length === 0) {
     return PLACEHOLDER_IMAGE;
@@ -34,8 +35,8 @@ export const getTourImageUrl = (tour: any, index: number = 0): string => {
   const img = imgs[index] || imgs[0];
   if (typeof img === 'string') return resolveImageUrl(img);
   if (img && typeof img === 'object') {
-    const url = (img as any).imageUrl || (img as any).url || '';
-    return resolveImageUrl(url);
+    const obj = img as { imageUrl?: string; url?: string };
+    return resolveImageUrl(obj.imageUrl || obj.url || '');
   }
   return PLACEHOLDER_IMAGE;
 };

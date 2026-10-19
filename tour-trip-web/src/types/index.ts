@@ -177,7 +177,12 @@ export interface DashboardStats {
   topTours?: Tour[];
 }
 
-export const getTourDestination = (tour: any): Destination => {
+type TourRef = Pick<
+  Tour,
+  'destination' | 'destinationId' | 'destinationName' | 'category' | 'categoryId' | 'categoryName'
+>;
+
+export const getTourDestination = (tour: TourRef): Destination => {
   if (tour?.destination && tour.destination.name) {
     return tour.destination;
   }
@@ -187,7 +192,7 @@ export const getTourDestination = (tour: any): Destination => {
   return { id: 0, name: 'Unknown Destination', country: '' };
 };
 
-export const getTourCategory = (tour: any): Category => {
+export const getTourCategory = (tour: TourRef): Category => {
   if (tour?.category && tour.category.name) {
     return tour.category;
   }

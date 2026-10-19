@@ -49,7 +49,12 @@ export const AdminLayout: React.FC = () => {
       }
     };
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    // Poll only when the page is visible/open to reduce background churn
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications();
+      }
+    }, 30000);
     return () => clearInterval(interval);
   }, [refreshKey]);
 

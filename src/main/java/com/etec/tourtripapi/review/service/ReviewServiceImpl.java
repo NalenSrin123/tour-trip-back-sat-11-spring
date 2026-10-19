@@ -112,7 +112,8 @@ public class ReviewServiceImpl implements ReviewService {
         if (!tourRepository.existsById(tourId)) {
             throw new ResourceNotFoundException("Tour not found with id: " + tourId);
         }
-        return reviewRepository.findByTourId(tourId).stream()
+        // Cap at 20 newest reviews so the public endpoint never returns an unbounded list
+        return reviewRepository.findByTourId(tourId, PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))).stream()
                 .map(reviewMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -131,15 +132,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     private void updateTourAverageRating(Tour tour) {
-        List<Review> tourReviews = reviewRepository.findByTourId(tour.getId());
-        if (tourReviews.isEmpty()) {
+        // AVG computed in SQL — does not load every review of the tour
+        BigDecimal avg = reviewRepository.avgRatingByTourId(tour.getId());
+        long total = reviewRepository.countByTourId(tour.getId());
+        if (total == 0 || avg == null) {
             tour.setRatingAvg(BigDecimal.ZERO);
         } else {
-            double average = tourReviews.stream()
-                    .mapToInt(Review::getRating)
-                    .average()
-                    .orElse(0.0);
-            tour.setRatingAvg(BigDecimal.valueOf(average).setScale(2, RoundingMode.HALF_UP));
+            tour.setRatingAvg(avg.setScale(2, RoundingMode.HALF_UP));
         }
         tourRepository.save(tour);
     }

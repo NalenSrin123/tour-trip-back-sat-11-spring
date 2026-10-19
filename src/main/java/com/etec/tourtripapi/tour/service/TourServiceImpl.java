@@ -8,6 +8,7 @@ import com.etec.tourtripapi.common.service.FileStorageService;
 import com.etec.tourtripapi.destination.entity.Destination;
 import com.etec.tourtripapi.destination.repository.DestinationRepository;
 import com.etec.tourtripapi.tour.dto.request.TourRequest;
+import com.etec.tourtripapi.tour.dto.response.TourFacetsResponse;
 import com.etec.tourtripapi.tour.dto.response.TourResponse;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.entity.TourImage;
@@ -109,6 +110,23 @@ public class TourServiceImpl implements TourService {
                 .map(tourMapper::toResponse)
                 .collect(Collectors.toList());
         return PageResponse.of(content, safePage, safeSize, result.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TourFacetsResponse getFacets() {
+        TourFacetsResponse response = new TourFacetsResponse();
+        for (Object[] row : tourRepository.countPublishedByDestination()) {
+            if (row[0] != null) {
+                response.getDestinations().put((String) row[0], ((Number) row[1]).longValue());
+            }
+        }
+        for (Object[] row : tourRepository.countPublishedByCategory()) {
+            if (row[0] != null) {
+                response.getCategories().put((String) row[0], ((Number) row[1]).longValue());
+            }
+        }
+        return response;
     }
 
     @Override

@@ -10,6 +10,8 @@ import com.etec.tourtripapi.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
@@ -26,16 +28,11 @@ public class DashboardServiceImpl implements DashboardService {
         long tourCount = tourRepository.count();
         long bookingCount = bookingRepository.count();
 
-        // Sum total amount safely converting BigDecimal to double
-        Double revenue = paymentRepository.findAll().stream()
-                .map(p -> p.getAmount())
-                .filter(amount -> amount != null)
-                .mapToDouble(java.math.BigDecimal::doubleValue)
-                .sum();
+        // SUM/COUNT computed in SQL — never loads full tables into memory
+        BigDecimal revenueSum = paymentRepository.sumAllAmounts();
+        double revenue = revenueSum != null ? revenueSum.doubleValue() : 0.0;
 
-        long pendingRefundsCount = refundRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RefundStatus.PENDING)
-                .count();
+        long pendingRefundsCount = refundRepository.countByStatus(RefundStatus.PENDING);
 
         return new DashboardStatsResponse(userCount, tourCount, bookingCount, revenue, pendingRefundsCount);
     }

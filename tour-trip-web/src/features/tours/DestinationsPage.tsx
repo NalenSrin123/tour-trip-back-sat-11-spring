@@ -1,31 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 import { extractData, resolveImageUrl } from '../../api/utils';
 import { Link } from 'react-router-dom';
 import type { Destination } from '../../types';
+import { Skeleton } from '../../components/Skeleton';
 
 const PAGE_SIZE = 8;
 
 export const DestinationsPage: React.FC = () => {
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        const res = await apiClient.get('/api/v1/destinations');
-        setDestinations(extractData(res));
-      } catch {
-        console.error('Failed to load destinations');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDestinations();
-  }, []);
+  const { data: destinations = [], isPending } = useQuery<Destination[]>({
+    queryKey: ['destinations'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/destinations');
+      return extractData(res);
+    },
+  });
 
   const totalPages = Math.ceil(destinations.length / PAGE_SIZE);
   const paginated = destinations.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -42,10 +36,10 @@ export const DestinationsPage: React.FC = () => {
         </p>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map(n => (
-            <div key={n} className="bg-white rounded-3xl h-80 animate-pulse bg-gray-200" />
+      {isPending ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+            <Skeleton key={n} className="h-80 rounded-3xl" />
           ))}
         </div>
       ) : destinations.length === 0 ? (

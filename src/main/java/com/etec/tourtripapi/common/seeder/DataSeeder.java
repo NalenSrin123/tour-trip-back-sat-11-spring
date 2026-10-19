@@ -1,11 +1,23 @@
 package com.etec.tourtripapi.common.seeder;
 
+import com.etec.tourtripapi.booking.entity.Booking;
+import com.etec.tourtripapi.booking.repository.BookingRepository;
 import com.etec.tourtripapi.category.entity.Category;
 import com.etec.tourtripapi.category.repository.CategoryRepository;
+import com.etec.tourtripapi.common.enums.BookingStatus;
+import com.etec.tourtripapi.common.enums.PaymentStatus;
+import com.etec.tourtripapi.common.enums.RefundStatus;
 import com.etec.tourtripapi.common.enums.ScheduleStatus;
 import com.etec.tourtripapi.destination.entity.Destination;
 import com.etec.tourtripapi.destination.repository.DestinationRepository;
+import com.etec.tourtripapi.payment.entity.Payment;
+import com.etec.tourtripapi.payment.repository.PaymentRepository;
+import com.etec.tourtripapi.refund.entity.Refund;
+import com.etec.tourtripapi.refund.repository.RefundRepository;
+import com.etec.tourtripapi.review.entity.Review;
+import com.etec.tourtripapi.review.repository.ReviewRepository;
 import com.etec.tourtripapi.schedule.entity.TourSchedule;
+import com.etec.tourtripapi.schedule.repository.TourScheduleRepository;
 import com.etec.tourtripapi.tour.entity.Tour;
 import com.etec.tourtripapi.tour.entity.TourImage;
 import com.etec.tourtripapi.tour.repository.TourRepository;
@@ -17,13 +29,16 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +54,11 @@ public class DataSeeder implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final TourRepository tourRepository;
     private final UserRepository userRepository;
+    private final TourScheduleRepository scheduleRepository;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
+    private final RefundRepository refundRepository;
+    private final ReviewRepository reviewRepository;
     private final JdbcTemplate jdbcTemplate;
 
     private static final String[][] DESTS = {
@@ -219,7 +239,11 @@ public class DataSeeder implements CommandLineRunner {
                 img.setIsCover(i == 0);
                 images.add(img);
             }
-            tour.setImages(images);
+            if (tour.getImages() == null) {
+                tour.setImages(new ArrayList<>());
+            }
+            tour.getImages().clear();
+            tour.getImages().addAll(images);
 
             List<TourSchedule> schedules = new ArrayList<>();
             LocalDate base = LocalDate.now().plusDays(7);
@@ -233,12 +257,128 @@ public class DataSeeder implements CommandLineRunner {
                 sch.setStatus(ScheduleStatus.ACTIVE);
                 schedules.add(sch);
             }
-            tour.setSchedules(schedules);
+            if (tour.getSchedules() == null) {
+                tour.setSchedules(new ArrayList<>());
+            }
+            tour.getSchedules().clear();
+            tour.getSchedules().addAll(schedules);
 
             tourRepository.save(tour);
             created++;
         }
         log.info("Tours seeded: {} new, {} image-refreshed", created, refreshed);
+    }
+
+    /**
+     * Seeds a small, realistic set of demo bookings together with their payments, refunds and
+     * reviews so the admin dashboard, reports and list pages have data to display on a fresh
+     * database. Runs only when there are no bookings yet, so real data is never touched.
+     */
+    private void seedBookings() {
+        if (bookingRepository.count() > 0) {
+            log.info("Bookings already present; skipping demo booking seeding.");
+            return;
+        }
+
+        User customer = userRepository.findByEmail("sinhporsurii@gmail.com")
+                .orElseGet(() -> userRepository.findAll().stream()
+                        .filter(u -> u.getRoles() != null && u.getRoles().stream()
+                                .anyMatch(r -> "CUSTOMER".equals(r.getName())))
+                        .findFirst().orElse(null));
+        if (customer == null) {
+            log.warn("No customer user available; skipping demo booking seeding.");
+            return;
+        }
+
+        BookingStatus[] statusPlan = {
+                BookingStatus.COMPLETED, BookingStatus.COMPLETED, BookingStatus.CONFIRMED,
+                BookingStatus.CONFIRMED, BookingStatus.PENDING, BookingStatus.CANCELLED,
+                BookingStatus.CANCELLED, BookingStatus.CONFIRMED
+        };
+        PaymentStatus[] payPlan = {
+                PaymentStatus.PAID, PaymentStatus.PAID, PaymentStatus.PAID,
+                PaymentStatus.PENDING, PaymentStatus.PENDING, PaymentStatus.REFUNDED,
+                PaymentStatus.PAID, PaymentStatus.FAILED
+        };
+        RefundStatus[] refundPlan = {
+                null, null, null, null, null, RefundStatus.COMPLETED, RefundStatus.PENDING, null
+        };
+        Integer[] ratings = {5, 4, null, null, null, null, null, null};
+        String[] comments = {
+                "Absolutely unforgettable experience - the guide was fantastic and everything ran on time.",
+                "Great value for money and very well organised from start to finish.",
+                null, null, null, null, null, null
+        };
+        String[] refundReasons = {
+                null, null, null, null, null, "Trip cancelled by customer before departure.",
+                "Customer requested a refund after changing plans.", null
+        };
+        String[] methods = {"KHQR", "CREDIT_CARD", "CASH"};
+
+        int created = 0;
+        int idx = 0;
+        for (Tour tour : tourRepository.findAll()) {
+            if (idx >= statusPlan.length) break;
+
+            List<TourSchedule> schedules = scheduleRepository.findByTourId(tour.getId());
+            if (schedules.isEmpty() || tour.getPrice() == null) continue;
+
+            int participants = 1 + (idx % 4);
+            BigDecimal total = tour.getPrice().multiply(BigDecimal.valueOf(participants));
+            LocalDateTime bookedAt = LocalDateTime.now().minusDays(24 - idx * 2L);
+
+            Booking booking = new Booking();
+            booking.setUser(customer);
+            booking.setSchedule(schedules.get(0));
+            booking.setNumberOfParticipants(participants);
+            booking.setTotalPrice(total);
+            booking.setStatus(statusPlan[idx]);
+            bookingRepository.save(booking);
+
+            PaymentStatus payStatus = payPlan[idx];
+            Payment payment = new Payment();
+            payment.setBooking(booking);
+            payment.setAmount(total);
+            payment.setMethod(methods[idx % methods.length]);
+            payment.setStatus(payStatus);
+            if (payStatus == PaymentStatus.PAID || payStatus == PaymentStatus.REFUNDED) {
+                payment.setTransactionId("TXN-" + String.format("%06d", 1000 + idx));
+                payment.setPaidAt(bookedAt.plusHours(2));
+            }
+            paymentRepository.save(payment);
+
+            if (refundPlan[idx] != null) {
+                Refund refund = new Refund();
+                refund.setBooking(booking);
+                refund.setAmount(total);
+                refund.setReason(refundReasons[idx]);
+                refund.setStatus(refundPlan[idx]);
+                if (refundPlan[idx] == RefundStatus.COMPLETED) {
+                    refund.setRefundedAt(bookedAt.plusDays(3));
+                }
+                refundRepository.save(refund);
+            }
+
+            if (ratings[idx] != null) {
+                Review review = new Review();
+                review.setTour(tour);
+                review.setUser(customer);
+                review.setBooking(booking);
+                review.setRating(ratings[idx]);
+                review.setComment(comments[idx]);
+                reviewRepository.save(review);
+                jdbcTemplate.update("UPDATE reviews SET created_at = ? WHERE booking_id = ?",
+                        Timestamp.valueOf(bookedAt.plusDays(5)), booking.getId());
+            }
+
+            // Backdate the booking so dashboard/report trends span several days.
+            jdbcTemplate.update("UPDATE bookings SET booking_date = ? WHERE id = ?",
+                    Timestamp.valueOf(bookedAt), booking.getId());
+
+            idx++;
+            created++;
+        }
+        log.info("Demo bookings seeded: {} (with payments/refunds/reviews)", created);
     }
 
     private boolean refreshTourImages(Tour tour, Destination dest) {
@@ -262,7 +402,13 @@ public class DataSeeder implements CommandLineRunner {
             img.setIsCover(i == 0);
             images.add(img);
         }
-        tour.setImages(images);
+        // Mutate the managed collection in place. Replacing the reference would
+        // trip Hibernate's orphanRemoval check ("collection no longer referenced").
+        if (tour.getImages() == null) {
+            tour.setImages(new ArrayList<>());
+        }
+        tour.getImages().clear();
+        tour.getImages().addAll(images);
         return true;
     }
 
@@ -310,6 +456,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
         ensureLongTextColumns();
         migratePaymentMethodNames();
@@ -317,5 +464,6 @@ public class DataSeeder implements CommandLineRunner {
         seedCategories();
         seedDestinations();
         seedTours();
+        seedBookings();
     }
 }

@@ -16,22 +16,21 @@ export const AdminCategories: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-
-  const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/api/v1/categories');
-      setCategories(extractData(res));
-    } catch (err) {
-      toast.error('Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/categories');
+        setCategories(extractData(res));
+      } catch {
+        toast.error('Failed to load categories');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCategories();
-  }, []);
+  }, [reloadKey]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -51,10 +50,10 @@ export const AdminCategories: React.FC = () => {
     if (!window.confirm('Delete this category?')) return;
     try {
       await apiClient.delete(`/api/v1/categories/${id}`);
-      await fetchCategories();
+      setReloadKey(k => k + 1);
       toast.success('Category deleted successfully');
-    } catch (err: any) {
-      toast.error('Failed to delete category: ' + (err?.response?.data?.message || err?.message || 'Server error'));
+    } catch (err: unknown) {
+      toast.error('Failed to delete category: ' + ((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'Server error'));
     }
   };
 
@@ -69,10 +68,10 @@ export const AdminCategories: React.FC = () => {
         await apiClient.post('/api/v1/categories', payload);
         toast.success('Category created successfully');
       }
-      await fetchCategories();
+      setReloadKey(k => k + 1);
       setModalOpen(false);
-    } catch (err: any) {
-      toast.error('Failed to save category: ' + (err?.response?.data?.message || err?.message || 'Server error'));
+    } catch (err: unknown) {
+      toast.error('Failed to save category: ' + ((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'Server error'));
     }
   };
 

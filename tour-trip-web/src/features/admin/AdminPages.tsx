@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export * from './AdminDashboard';
 export * from './AdminTours';
 export * from './AdminBookings';

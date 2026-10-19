@@ -22,9 +22,19 @@ export const BookingCheckout: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    apiClient.get(`/api/v1/tours/${tourId}`)
-      .then(res => setTour(res.data))
-      .catch(() => {});
+    let mounted = true;
+    const fetchTour = async () => {
+      try {
+        const res = await apiClient.get(`/api/v1/tours/${tourId}`);
+        if (mounted) setTour(res.data);
+      } catch {
+        // Silent fail
+      }
+    };
+    fetchTour();
+    return () => {
+      mounted = false;
+    };
   }, [tourId]);
 
   const price = tour?.price ?? 0;

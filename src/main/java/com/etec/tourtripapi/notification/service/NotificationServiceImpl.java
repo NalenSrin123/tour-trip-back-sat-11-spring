@@ -35,14 +35,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     /**
      * Fan an event out to every administrator, since the bell is only rendered
-     * on the admin portal.
+     * on the admin portal. Uses a targeted role query instead of scanning all users.
      */
     @Override
     @Transactional
     public void createForAdmins(String type, String message) {
-        userRepository.findAll().stream()
-                .filter(u -> u.getRoles() != null && u.getRoles().stream()
-                        .anyMatch(role -> "ADMIN".equalsIgnoreCase(role.getName())))
+        userRepository.findByRoles_Name("ADMIN")
                 .forEach(admin -> createNotification(admin, type, message));
     }
 

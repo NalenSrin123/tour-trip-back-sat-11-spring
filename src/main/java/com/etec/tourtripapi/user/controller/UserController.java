@@ -39,6 +39,16 @@ public class UserController {
         return new ResponseEntity<>(userMapper.toResponse(createdUser), HttpStatus.CREATED);
     }
 
+    // READ: Public list of tour guides (used by the About page — no auth required)
+    @GetMapping("/guides")
+    public ResponseEntity<List<UserResponse>> getGuides() {
+        List<User> guides = userRepository.findByRoles_Name("GUIDE");
+        List<UserResponse> responseList = guides.stream()
+                .map(userMapper::toResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responseList);
+    }
+
     // READ: Get all users with optional specifications/filters
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers(

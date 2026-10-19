@@ -113,6 +113,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
 
                         // 14. Users & Roles Management
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/guides").permitAll()
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/roles/**").hasRole("ADMIN")
 

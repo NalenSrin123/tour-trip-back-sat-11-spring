@@ -28,14 +28,14 @@ export const HomePage: React.FC = () => {
   const [favorites, setFavorites] = useState<number[]>([]);
 
   const toursQuery = useQuery({
-    queryKey: ['tours'],
-    queryFn: () => apiClient.get('/api/v1/tours'),
+    queryKey: ['tours', 'featured'],
+    queryFn: () => apiClient.get('/api/v1/tours/page', { params: { page: 0, size: 8, isPublished: true } }),
     select: (res): Tour[] => (Array.isArray(res.data) ? res.data : (res.data?.content ?? [])),
   });
   const reviewsQuery = useQuery({
-    queryKey: ['reviews'],
-    queryFn: () => apiClient.get('/api/v1/reviews'),
-    select: (res): HomeReview[] => extractData(res),
+    queryKey: ['reviews', 'recent'],
+    queryFn: () => apiClient.get('/api/v1/reviews/page', { params: { page: 0, size: 6 } }),
+    select: (res): HomeReview[] => (Array.isArray(res.data) ? res.data : (res.data?.content ?? [])),
   });
   const destinationsQuery = useQuery({
     queryKey: ['destinations'],
@@ -47,11 +47,19 @@ export const HomePage: React.FC = () => {
     queryFn: () => apiClient.get('/api/v1/categories'),
     select: (res): Category[] => extractData(res),
   });
+  // Lightweight GROUP BY counts — avoids downloading the whole tour table.
+  const facetsQuery = useQuery({
+    queryKey: ['tours', 'facets'],
+    queryFn: () => apiClient.get('/api/v1/tours/facets'),
+    select: (res): { destinations: Record<string, number>; categories: Record<string, number> } =>
+      res.data ?? { destinations: {}, categories: {} },
+  });
 
   const tours = toursQuery.data ?? [];
   const reviews = reviewsQuery.data ?? [];
   const destinations = destinationsQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
+  const facets = facetsQuery.data ?? { destinations: {}, categories: {} };
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -77,9 +85,9 @@ export const HomePage: React.FC = () => {
   // Only surface destinations/categories that actually have tours, so a client
   // can never land on an empty result. Sorted by the most available tours.
   const destinationTourCount = (name?: string) =>
-    name ? tours.filter(t => (t.destinationName || t.destination?.name) === name).length : 0;
+    name ? Number(facets.destinations[name] ?? 0) : 0;
   const categoryTourCount = (name?: string) =>
-    name ? tours.filter(t => (t.categoryName || t.category?.name) === name).length : 0;
+    name ? Number(facets.categories[name] ?? 0) : 0;
 
   const popularDestinations = destinations
     .map(d => ({ ...d, tourCount: destinationTourCount(d.name) }))

@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Compass, Clock, Star, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import type { Destination, Tour } from '../../types';
 import { apiClient } from '../../api/client';
-import { extractData, resolveImageUrl } from '../../api/utils';
+import { resolveImageUrl } from '../../api/utils';
 import { Skeleton, SkeletonCard } from '../../components/Skeleton';
 
 export const DestinationDetailPage: React.FC = () => {
@@ -17,24 +17,22 @@ export const DestinationDetailPage: React.FC = () => {
     queryFn: async () => (await apiClient.get(`/api/v1/destinations/${id}`)).data,
   });
   const toursQuery = useQuery({
-    queryKey: ['tours'],
-    queryFn: () => apiClient.get('/api/v1/tours'),
-    select: (res): Tour[] => extractData(res),
+    queryKey: ['tours', 'by-destination', id],
+    enabled: !!id,
+    queryFn: () => apiClient.get('/api/v1/tours/page', {
+      params: {
+        page: 0,
+        size: 24,
+        isPublished: true,
+        destinationId: Number(id) || undefined,
+      },
+    }),
+    select: (res): Tour[] => (Array.isArray(res.data) ? res.data : (res.data?.content ?? [])),
   });
 
   const destination = (destQuery.data ?? null) as Destination | null;
 
-  const tours = useMemo(() => {
-    if (destQuery.isPending || toursQuery.isPending) return [];
-    const allTours = toursQuery.data ?? [];
-    const destIdNum = Number(id);
-    const destName = destination?.name || '';
-    return allTours.filter((tour: Tour) =>
-      tour.destinationId === destIdNum ||
-      tour.destination?.id === destIdNum ||
-      (destName && (tour.destinationName || tour.destination?.name || '').toLowerCase() === destName.toLowerCase())
-    );
-  }, [destQuery.isPending, toursQuery.isPending, toursQuery.data, destination, id]);
+  const tours = toursQuery.data ?? [];
 
   if (destQuery.isPending) {
     return (

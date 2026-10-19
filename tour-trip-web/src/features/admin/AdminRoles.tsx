@@ -20,22 +20,21 @@ export const AdminRoles: React.FC = () => {
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
   const [roleName, setRoleName] = useState('');
   const [roleDescription, setRoleDescription] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await apiClient.get('/api/v1/roles');
+        setRoles(extractData(res));
+      } catch {
+        toast.error('Failed to load roles');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchRoles();
-  }, []);
-
-  const fetchRoles = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/api/v1/roles');
-      setRoles(extractData(res));
-    } catch {
-      toast.error('Failed to load roles');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [reloadKey]);
 
   const handleOpenCreate = () => {
     setEditingRoleId(null);
@@ -68,7 +67,7 @@ export const AdminRoles: React.FC = () => {
         toast.success('Role created successfully');
       }
       setModalOpen(false);
-      fetchRoles();
+      setReloadKey(k => k + 1);
     } catch {
       toast.error('Failed to save role');
     }

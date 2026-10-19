@@ -20,11 +20,10 @@ export const AboutPage: React.FC = () => {
   useEffect(() => {
     const fetchGuides = async () => {
       try {
-        // Fetching users. In a real app, you might have a /api/v1/users/guides endpoint
-        const res = await apiClient.get('/api/v1/users');
+        // Use the public /guides endpoint (no ADMIN auth required)
+        const res = await apiClient.get('/api/v1/users/guides');
         const allUsers = extractData(res);
-        const filteredGuides = allUsers.filter((u: Guide) => u.role === 'GUIDE');
-        setGuides(filteredGuides);
+        setGuides(allUsers as Guide[]);
       } catch {
         console.error('Failed to load guides');
       } finally {

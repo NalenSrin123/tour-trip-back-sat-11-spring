@@ -1,6 +1,7 @@
 package com.etec.tourtripapi.tour.controller;
 
 import com.etec.tourtripapi.tour.dto.request.TourRequest;
+import com.etec.tourtripapi.tour.dto.response.TourFacetsResponse;
 import com.etec.tourtripapi.tour.dto.response.TourResponse;
 import com.etec.tourtripapi.common.response.PageResponse;
 import com.etec.tourtripapi.tour.entity.Tour;
@@ -47,6 +48,11 @@ public class TourController {
 
         List<TourResponse> response = tourService.getAllTours(spec);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/facets")
+    public ResponseEntity<TourFacetsResponse> getTourFacets() {
+        return ResponseEntity.ok(tourService.getFacets());
     }
 
     @GetMapping("/page")
