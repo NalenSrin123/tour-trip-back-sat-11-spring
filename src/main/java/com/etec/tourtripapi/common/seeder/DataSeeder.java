@@ -42,10 +42,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -172,30 +171,51 @@ public class DataSeeder implements CommandLineRunner {
                 created++;
             } else {
                 List<String> current = dest.getImages() != null ? new ArrayList<>(dest.getImages()) : new ArrayList<>();
-                List<String> preservedUploads = current.stream()
-                        .filter(u -> u != null && !u.startsWith("/api/v1/files/seed-"))
-                        .collect(Collectors.toList());
-                List<String> currentSeed = current.stream()
-                        .filter(u -> u != null && u.startsWith("/api/v1/files/seed-"))
-                        .collect(Collectors.toList());
+                List<String> repaired = new ArrayList<>(current.size());
+                boolean changed = false;
 
-                // Fill empty galleries, and self-heal stale seed image URLs (e.g. a seed
-                // file that was persisted as ".png" but no longer ships) without wiping
-                // out admin-uploaded images.
-                boolean empty = current.isEmpty();
-                boolean seedOutOfDate = !currentSeed.isEmpty()
-                        && !new HashSet<>(currentSeed).equals(new HashSet<>(imgs));
-                if (!imgs.isEmpty() && (empty || seedOutOfDate)) {
-                    List<String> rebuilt = new ArrayList<>(imgs);
-                    rebuilt.addAll(preservedUploads);
-                    dest.setImages(rebuilt);
-                    dest.setImageUrl(rebuilt.get(0));
+                // Fill an empty gallery, and surgically repair stale seed URLs (e.g. a
+                // file persisted as ".png" that now ships as ".jpg") without adding,
+                // removing or reordering anything the admin may have curated.
+                if (current.isEmpty() && !imgs.isEmpty()) {
+                    repaired = new ArrayList<>(imgs);
+                    changed = true;
+                } else {
+                    for (String url : current) {
+                        String fixed = repairSeedUrl(url, imgs);
+                        if (!Objects.equals(fixed, url)) changed = true;
+                        repaired.add(fixed);
+                    }
+                }
+
+                if (changed) {
+                    dest.setImages(repaired);
+                    dest.setImageUrl(repaired.isEmpty() ? null : repaired.get(0));
                     destinationRepository.save(dest);
                     updated++;
                 }
             }
         }
         log.info("Destinations: {} created, {} updated", created, updated);
+    }
+
+    /**
+     * Maps a stored seed image URL onto the matching shipped file when only the
+     * extension differs (e.g. {@code seed-koh-kong-1.png} -> {@code seed-koh-kong-1.jpg}).
+     * Anything that is not a seed file, or has no known replacement, is returned as-is.
+     */
+    private String repairSeedUrl(String url, List<String> canonical) {
+        if (url == null || !url.startsWith("/api/v1/files/seed-")) return url;
+        if (canonical.contains(url)) return url;
+
+        int dot = url.lastIndexOf('.');
+        String base = dot > 0 ? url.substring(0, dot) : url;
+        for (String candidate : canonical) {
+            int cdot = candidate.lastIndexOf('.');
+            String candidateBase = cdot > 0 ? candidate.substring(0, cdot) : candidate;
+            if (candidateBase.equals(base)) return candidate;
+        }
+        return url;
     }
 
     private void seedTours() {
