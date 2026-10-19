@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../api/client';
-import { extractData, resolveImageUrl } from '../../api/utils';
+import { resolveImageUrl } from '../../api/utils';
+import { destinationsQueryOptions } from '../../api/queries';
 import { Link } from 'react-router-dom';
 import type { Destination } from '../../types';
 import { Skeleton } from '../../components/Skeleton';
@@ -14,13 +14,7 @@ const PAGE_SIZE = 8;
 export const DestinationsPage: React.FC = () => {
   const [page, setPage] = useState(1);
 
-  const { data: destinations = [], isPending } = useQuery<Destination[]>({
-    queryKey: ['destinations'],
-    queryFn: async () => {
-      const res = await apiClient.get('/api/v1/destinations');
-      return extractData(res);
-    },
-  });
+  const { data: destinations = [], isPending } = useQuery(destinationsQueryOptions);
 
   const totalPages = Math.ceil(destinations.length / PAGE_SIZE);
   const paginated = destinations.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

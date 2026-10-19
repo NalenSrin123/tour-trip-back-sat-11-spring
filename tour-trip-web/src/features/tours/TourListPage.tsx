@@ -3,9 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Star, Heart, Clock, Compass, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import type { Tour, Category, Destination } from '../../types';
+import type { Tour, Category } from '../../types';
 import { getTourDestination } from '../../types';
 import { apiClient } from '../../api/client';
+import { destinationsQueryOptions } from '../../api/queries';
 import { extractData, getTourImageUrl } from '../../api/utils';
 import { Seo } from '../../components/Seo';
 import { toast } from 'sonner';
@@ -62,11 +63,7 @@ export const TourListPage: React.FC = () => {
     getNextPageParam: (last) => (last?.hasMore ? last.page + 1 : undefined),
   });
 
-  const destinationsQuery = useQuery({
-    queryKey: ['destinations'],
-    queryFn: () => apiClient.get('/api/v1/destinations'),
-    select: (res): Destination[] => extractData(res),
-  });
+  const destinationsQuery = useQuery(destinationsQueryOptions);
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
     queryFn: () => apiClient.get('/api/v1/categories'),

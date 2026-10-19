@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, MapPin, Star, Heart, Compass, Clock, ShieldCheck, Headphones, Award, ThumbsUp, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import type { Tour, Destination, Category, Review } from '../../types';
+import type { Tour, Category, Review } from '../../types';
 import { getTourDestination } from '../../types';
 import { apiClient } from '../../api/client';
+import { destinationsQueryOptions } from '../../api/queries';
 import { extractData, resolveImageUrl, getTourImageUrl } from '../../api/utils';
 import { Skeleton, SkeletonCard } from '../../components/Skeleton';
 import { Seo } from '../../components/Seo';
@@ -38,11 +39,7 @@ export const HomePage: React.FC = () => {
     queryFn: () => apiClient.get('/api/v1/reviews/page', { params: { page: 0, size: 6 } }),
     select: (res): HomeReview[] => (Array.isArray(res.data) ? res.data : (res.data?.content ?? [])),
   });
-  const destinationsQuery = useQuery({
-    queryKey: ['destinations'],
-    queryFn: () => apiClient.get('/api/v1/destinations'),
-    select: (res): Destination[] => extractData(res),
-  });
+  const destinationsQuery = useQuery(destinationsQueryOptions);
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
     queryFn: () => apiClient.get('/api/v1/categories'),
