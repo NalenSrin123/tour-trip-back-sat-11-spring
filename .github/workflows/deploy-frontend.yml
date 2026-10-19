@@ -32,6 +32,7 @@ jobs:
 
       - name: Deploy to Vercel (production)
         id: deploy
+        working-directory: tour-trip-web
         run: |
           url=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
