@@ -1,42 +1,43 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { ProtectedRoute } from './ProtectedRoute';
+import { lazyWithRetry } from './lazyWithRetry';
 import { HomePage } from '../features/tours/HomePage';
 
 // Route-level code splitting: heavy pages (recharts, framer-motion, admin CRUD)
 // load on demand so the landing page ships a much smaller first bundle.
-const TourListPage = lazy(() => import('../features/tours/TourListPage').then(m => ({ default: m.TourListPage })));
-const TourDetailPage = lazy(() => import('../features/tours/TourDetailPage').then(m => ({ default: m.TourDetailPage })));
-const DestinationsPage = lazy(() => import('../features/tours/DestinationsPage').then(m => ({ default: m.DestinationsPage })));
-const DestinationDetailPage = lazy(() => import('../features/tours/DestinationDetailPage').then(m => ({ default: m.DestinationDetailPage })));
-const AboutPage = lazy(() => import('../features/company/AboutPage').then(m => ({ default: m.AboutPage })));
-const ContactPage = lazy(() => import('../features/company/ContactPage').then(m => ({ default: m.ContactPage })));
+const TourListPage = lazyWithRetry(() => import('../features/tours/TourListPage').then(m => ({ default: m.TourListPage })));
+const TourDetailPage = lazyWithRetry(() => import('../features/tours/TourDetailPage').then(m => ({ default: m.TourDetailPage })));
+const DestinationsPage = lazyWithRetry(() => import('../features/tours/DestinationsPage').then(m => ({ default: m.DestinationsPage })));
+const DestinationDetailPage = lazyWithRetry(() => import('../features/tours/DestinationDetailPage').then(m => ({ default: m.DestinationDetailPage })));
+const AboutPage = lazyWithRetry(() => import('../features/company/AboutPage').then(m => ({ default: m.AboutPage })));
+const ContactPage = lazyWithRetry(() => import('../features/company/ContactPage').then(m => ({ default: m.ContactPage })));
 const AuthPages = import('../features/auth/AuthPages');
-const Login = lazy(() => AuthPages.then(m => ({ default: m.Login })));
-const Register = lazy(() => AuthPages.then(m => ({ default: m.Register })));
-const ForgotPassword = lazy(() => AuthPages.then(m => ({ default: m.ForgotPassword })));
-const ResetPassword = lazy(() => AuthPages.then(m => ({ default: m.ResetPassword })));
+const Login = lazyWithRetry(() => AuthPages.then(m => ({ default: m.Login })));
+const Register = lazyWithRetry(() => AuthPages.then(m => ({ default: m.Register })));
+const ForgotPassword = lazyWithRetry(() => AuthPages.then(m => ({ default: m.ForgotPassword })));
+const ResetPassword = lazyWithRetry(() => AuthPages.then(m => ({ default: m.ResetPassword })));
 const BookingPages = import('../features/bookings/BookingPages');
-const BookingCheckout = lazy(() => BookingPages.then(m => ({ default: m.BookingCheckout })));
-const MyBookings = lazy(() => BookingPages.then(m => ({ default: m.MyBookings })));
+const BookingCheckout = lazyWithRetry(() => BookingPages.then(m => ({ default: m.BookingCheckout })));
+const MyBookings = lazyWithRetry(() => BookingPages.then(m => ({ default: m.MyBookings })));
 
 const AdminPages = import('../features/admin/AdminPages');
-const AdminDashboard = lazy(() => AdminPages.then(m => ({ default: m.AdminDashboard })));
-const AdminTours = lazy(() => AdminPages.then(m => ({ default: m.AdminTours })));
-const AdminBookings = lazy(() => AdminPages.then(m => ({ default: m.AdminBookings })));
-const AdminPayments = lazy(() => AdminPages.then(m => ({ default: m.AdminPayments })));
-const AdminRefunds = lazy(() => AdminPages.then(m => ({ default: m.AdminRefunds })));
-const AdminCategories = lazy(() => AdminPages.then(m => ({ default: m.AdminCategories })));
-const AdminDestinations = lazy(() => AdminPages.then(m => ({ default: m.AdminDestinations })));
-const AdminUsers = lazy(() => AdminPages.then(m => ({ default: m.AdminUsers })));
-const AdminRoles = lazy(() => AdminPages.then(m => ({ default: m.AdminRoles })));
-const AdminReports = lazy(() => AdminPages.then(m => ({ default: m.AdminReports })));
-const AdminSettings = lazy(() => AdminPages.then(m => ({ default: m.AdminSettings })));
-const AdminTourSchedules = lazy(() => AdminPages.then(m => ({ default: m.AdminTourSchedules })));
-const AdminTourImages = lazy(() => AdminPages.then(m => ({ default: m.AdminTourImages })));
-const AdminReviews = lazy(() => AdminPages.then(m => ({ default: m.AdminReviews })));
+const AdminDashboard = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminDashboard })));
+const AdminTours = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminTours })));
+const AdminBookings = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminBookings })));
+const AdminPayments = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminPayments })));
+const AdminRefunds = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminRefunds })));
+const AdminCategories = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminCategories })));
+const AdminDestinations = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminDestinations })));
+const AdminUsers = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminUsers })));
+const AdminRoles = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminRoles })));
+const AdminReports = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminReports })));
+const AdminSettings = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminSettings })));
+const AdminTourSchedules = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminTourSchedules })));
+const AdminTourImages = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminTourImages })));
+const AdminReviews = lazyWithRetry(() => AdminPages.then(m => ({ default: m.AdminReviews })));
 
 const RouteFallback: React.FC = () => (
   <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-live="polite">
