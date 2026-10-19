@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tours/*/schedules/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tours/*/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/page").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/settings/**").permitAll()
 
                         // 3. Admin-Only Management for Categories
