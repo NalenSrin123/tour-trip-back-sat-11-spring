@@ -7,6 +7,7 @@ import { extractData, resolveImageUrl } from '../../api/utils';
 import { Link } from 'react-router-dom';
 import type { Destination } from '../../types';
 import { Skeleton } from '../../components/Skeleton';
+import { Seo } from '../../components/Seo';
 
 const PAGE_SIZE = 8;
 
@@ -29,6 +30,10 @@ export const DestinationsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-16">
+      <Seo
+        title="Explore Destinations"
+        description="From the ancient temples of Siem Reap to the serene riverbanks of Kampot, discover the diverse landscapes of Cambodia."
+      />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-gray-900">Explore Our Destinations</h1>
         <p className="text-gray-500 max-w-2xl mx-auto">

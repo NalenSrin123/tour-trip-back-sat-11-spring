@@ -7,6 +7,7 @@ import type { Destination, Tour } from '../../types';
 import { apiClient } from '../../api/client';
 import { resolveImageUrl } from '../../api/utils';
 import { Skeleton, SkeletonCard } from '../../components/Skeleton';
+import { Seo } from '../../components/Seo';
 
 export const DestinationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,6 +61,12 @@ export const DestinationDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-16">
+      <Seo
+        title={destination.name}
+        description={destination.description || `Explore guided tours and experiences in ${destination.name}, Cambodia.`}
+        image={resolveImageUrl(destination.images?.[0] || destination.imageUrl || destination.image)}
+        type="article"
+      />
       <Link to="/destinations" className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Destinations
       </Link>

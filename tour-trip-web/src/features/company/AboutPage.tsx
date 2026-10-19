@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Star, Heart, Users } from 'lucide-react';
 import { apiClient } from '../../api/client';
 import { extractData, resolveImageUrl } from '../../api/utils';
+import { Seo } from '../../components/Seo';
 import { useState, useEffect } from 'react';
 
 interface Guide {
@@ -35,6 +36,10 @@ export const AboutPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-24">
+      <Seo
+        title="About Us"
+        description="Meet the passionate local guides behind Tour Trip and learn how we craft authentic, unforgettable journeys across Cambodia."
+      />
       {/* Hero Section */}
       <section className="text-center space-y-6">
         <motion.div

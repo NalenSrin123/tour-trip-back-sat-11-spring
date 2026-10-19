@@ -7,6 +7,7 @@ import type { Tour, Category, Destination } from '../../types';
 import { getTourDestination } from '../../types';
 import { apiClient } from '../../api/client';
 import { extractData, getTourImageUrl } from '../../api/utils';
+import { Seo } from '../../components/Seo';
 import { toast } from 'sonner';
 
 type TourPage = {
@@ -110,6 +111,10 @@ export const TourListPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-10">
+      <Seo
+        title="Explore All Tours"
+        description="Discover handpicked guided tours across Cambodia with transparent pricing and instant confirmation."
+      />
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
         <h1 className="text-4xl font-extrabold text-gray-900">Explore All Tours</h1>

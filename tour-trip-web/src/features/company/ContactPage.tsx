@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Seo } from '../../components/Seo';
 import { toast } from 'sonner';
 
 export const ContactPage: React.FC = () => {
@@ -26,6 +27,10 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-16">
+      <Seo
+        title="Contact Us"
+        description="Have a question about a tour or need a custom itinerary? Get in touch with the Tour Trip team."
+      />
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-extrabold text-gray-900">Get in Touch</h1>
         <p className="text-gray-500 max-w-2xl mx-auto">

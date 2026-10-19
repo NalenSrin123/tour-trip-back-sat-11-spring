@@ -8,6 +8,7 @@ import { apiClient, API_URL } from '../../api/client';
 import { getToken } from '../../api/authStorage';
 import { getTourImageUrl } from '../../api/utils';
 import { Skeleton, SkeletonRows } from '../../components/Skeleton';
+import { Seo } from '../../components/Seo';
 import { toast } from 'sonner';
 
 const EMPTY_SCHEDULES: TourSchedule[] = [];
@@ -110,6 +111,12 @@ export const TourDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 space-y-10">
+      <Seo
+        title={tour?.title}
+        description={tour?.description || (tour ? `Book the ${tour.title} tour with instant confirmation and transparent pricing.` : undefined)}
+        image={getTourImageUrl(tour)}
+        type="article"
+      />
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
