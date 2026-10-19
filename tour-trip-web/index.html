@@ -4,21 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tour-trip-web</title>
-    <script>
-      // Apply the saved theme before first paint so there is no light/dark flash.
-      (function () {
-        try {
-          var t = localStorage.getItem('theme');
-          if (t !== 'dark' && t !== 'light') {
-            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          }
-          document.documentElement.classList.toggle('dark', t === 'dark');
-        } catch (e) {
-          /* storage or matchMedia unavailable — fall back to light */
-        }
-      })();
-    </script>
+    <title>Tour Trip - Discover Cambodia & Beyond</title>
+    <meta name="title" content="Tour Trip - Discover Cambodia & Beyond" />
+    <meta name="description" content="Book unforgettable guided tours across Angkor Wat temples, royal palaces, pristine islands and hidden gems in Cambodia." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tour-trip-web.vercel.app/" />
+    <meta property="og:title" content="Tour Trip - Discover Cambodia & Beyond" />
+    <meta property="og:description" content="Book unforgettable guided tours across Angkor Wat temples, royal palaces, pristine islands and hidden gems in Cambodia." />
+    <meta property="og:image" content="https://tour-trip-web.vercel.app/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Tour Trip" />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://tour-trip-web.vercel.app/" />
+    <meta property="twitter:title" content="Tour Trip - Discover Cambodia & Beyond" />
+    <meta property="twitter:description" content="Book unforgettable guided tours across Angkor Wat temples, royal palaces, pristine islands and hidden gems in Cambodia." />
+    <meta property="twitter:image" content="https://tour-trip-web.vercel.app/og-image.jpg" />
+    <script>(function(){try{var t=localStorage.getItem("theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.classList.toggle("dark",t==="dark");}catch(e){}})();</script>
   </head>
   <body>
     <div id="root"></div>
